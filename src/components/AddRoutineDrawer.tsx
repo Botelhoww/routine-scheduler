@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -15,7 +16,7 @@ import { cn } from '@/lib/utils';
 
 interface Props {
   period: RoutinePeriod;
-  onAdd: (routine: { name: string; exePath: string; reprocessDate: string; dateReference: DateReference; period: RoutinePeriod }) => void;
+  onAdd: (routine: { name: string; exePath: string; reprocessDate: string; dateReference: DateReference; period: RoutinePeriod; reason?: string }) => void;
 }
 
 export function AddRoutineDrawer({ period, onAdd }: Props) {
@@ -24,13 +25,14 @@ export function AddRoutineDrawer({ period, onAdd }: Props) {
   const [exePath, setExePath] = useState('');
   const [date, setDate] = useState('');
   const [dateRef, setDateRef] = useState<DateReference>('D0');
+  const [reason, setReason] = useState('');
 
   const isValid = name.trim() && exePath.toLowerCase().endsWith('.exe') && date;
 
   const handleSubmit = () => {
     if (!isValid) return;
-    onAdd({ name: name.trim(), exePath, reprocessDate: date, dateReference: dateRef, period });
-    setName(''); setExePath(''); setDate(''); setDateRef('D0');
+    onAdd({ name: name.trim(), exePath, reprocessDate: date, dateReference: dateRef, period, reason: reason || undefined });
+    setName(''); setExePath(''); setDate(''); setDateRef('D0'); setReason('');
     setOpen(false);
   };
 
@@ -91,9 +93,9 @@ export function AddRoutineDrawer({ period, onAdd }: Props) {
               <Tooltip>
                 <TooltipTrigger><Info className="h-3.5 w-3.5 text-muted-foreground" /></TooltipTrigger>
                 <TooltipContent className="max-w-xs text-xs">
-                  <p><strong>D-1:</strong> Dia útil anterior — usado para dados de fechamento do dia anterior.</p>
-                  <p><strong>D0:</strong> Data corrente — processamento no próprio dia selecionado.</p>
-                  <p><strong>D+1:</strong> Próximo dia — pré-processamento para o dia seguinte.</p>
+                  <p><strong>D-1:</strong> Dia útil anterior.</p>
+                  <p><strong>D0:</strong> Data corrente.</p>
+                  <p><strong>D+1:</strong> Próximo dia.</p>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -107,6 +109,17 @@ export function AddRoutineDrawer({ period, onAdd }: Props) {
             {date && (
               <p className="text-sm text-muted-foreground mt-2">→ Será processado com: <strong className="text-foreground">{calculateProcessingDate(date, dateRef)}</strong></p>
             )}
+          </div>
+          <div>
+            <Label>Motivo do reprocessamento (opcional)</Label>
+            <Textarea
+              value={reason}
+              onChange={e => setReason(e.target.value.slice(0, 200))}
+              placeholder="Descreva o motivo..."
+              className="mt-1.5 text-sm min-h-[60px]"
+              maxLength={200}
+            />
+            <p className="text-xs text-muted-foreground text-right mt-0.5">{reason.length}/200</p>
           </div>
           <Button onClick={handleSubmit} disabled={!isValid} className="w-full bg-success text-success-foreground hover:bg-success/90">
             Adicionar Rotina

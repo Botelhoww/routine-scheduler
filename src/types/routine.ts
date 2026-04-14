@@ -8,6 +8,8 @@ export interface ExecutionHistory {
   status: 'success' | 'error';
   duration: string;
   errorMessage?: string;
+  executedBy?: string;
+  reason?: string;
 }
 
 export interface Routine {
@@ -19,5 +21,6 @@ export interface Routine {
   status: RoutineStatus;
   period: RoutinePeriod;
   errorMessage?: string;
+  reason?: string;
   history: ExecutionHistory[];
 }
