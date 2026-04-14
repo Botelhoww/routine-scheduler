@@ -1,7 +1,7 @@
 import { useRoutines } from '@/hooks/useRoutines';
 import { RoutineSection } from '@/components/RoutineSection';
+import { AppHeader } from '@/components/AppHeader';
 import { RoutinePeriod } from '@/types/routine';
-import { RefreshCcw } from 'lucide-react';
 
 const periods: RoutinePeriod[] = ['dawn', 'morning', 'night'];
 
@@ -10,20 +10,10 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="container max-w-7xl mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="bg-primary rounded-lg p-2">
-            <RefreshCcw className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="font-bold text-lg text-foreground">Reprocessamento de Rotinas</h1>
-            <p className="text-xs text-muted-foreground">Banco de Investimentos — Painel Administrativo</p>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
-      <main className="container max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <main className="container max-w-7xl mx-auto px-4 py-6 pt-[88px]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
           {periods.map(period => (
             <RoutineSection
               key={period}

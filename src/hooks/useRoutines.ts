@@ -14,15 +14,15 @@ const createMockRoutines = (): Routine[] => {
       id: '1', name: 'Apuração de CDI', exePath: 'C:\\Bank\\Routines\\apuracao_cdi.exe',
       reprocessDate: fmt(yesterday), dateReference: 'D-1', status: 'idle', period: 'dawn',
       history: [
-        { id: 'h1', date: '2025-04-10 02:15', status: 'success', duration: '3m 22s' },
-        { id: 'h2', date: '2025-04-09 02:14', status: 'success', duration: '3m 18s' },
+        { id: 'h1', date: '2025-04-10 02:15', status: 'success', duration: '3m 22s', executedBy: 'João Silva' },
+        { id: 'h2', date: '2025-04-09 02:14', status: 'success', duration: '3m 18s', executedBy: 'João Silva' },
       ],
     },
     {
       id: '2', name: 'Fechamento de Posições', exePath: 'C:\\Bank\\Routines\\fechamento_posicoes.exe',
       reprocessDate: fmt(yesterday), dateReference: 'D0', status: 'idle', period: 'dawn',
       history: [
-        { id: 'h3', date: '2025-04-10 03:00', status: 'error', duration: '1m 05s', errorMessage: 'Timeout de conexão com o servidor' },
+        { id: 'h3', date: '2025-04-10 03:00', status: 'error', duration: '1m 05s', errorMessage: 'Timeout de conexão com o servidor', executedBy: 'João Silva' },
       ],
     },
     {
@@ -34,15 +34,15 @@ const createMockRoutines = (): Routine[] => {
       id: '4', name: 'Marcação a Mercado', exePath: 'C:\\Bank\\Routines\\marcacao_mercado.exe',
       reprocessDate: fmt(yesterday), dateReference: 'D-1', status: 'idle', period: 'morning',
       history: [
-        { id: 'h4', date: '2025-04-10 08:30', status: 'success', duration: '5m 42s' },
-        { id: 'h5', date: '2025-04-09 08:28', status: 'success', duration: '5m 38s' },
+        { id: 'h4', date: '2025-04-10 08:30', status: 'success', duration: '5m 42s', executedBy: 'João Silva' },
+        { id: 'h5', date: '2025-04-09 08:28', status: 'success', duration: '5m 38s', executedBy: 'João Silva' },
       ],
     },
     {
       id: '5', name: 'Envio BACEN', exePath: 'C:\\Bank\\Routines\\envio_bacen.exe',
       reprocessDate: fmt(yesterday), dateReference: 'D+1', status: 'idle', period: 'night',
       history: [
-        { id: 'h6', date: '2025-04-10 19:00', status: 'success', duration: '2m 10s' },
+        { id: 'h6', date: '2025-04-10 19:00', status: 'success', duration: '2m 10s', executedBy: 'João Silva' },
       ],
     },
     {
@@ -80,9 +80,8 @@ export function useRoutines() {
     setRoutines(prev => prev.filter(r => r.id !== id));
   }, []);
 
-  const startReprocessing = useCallback((id: string) => {
-    setRoutines(prev => prev.map(r => r.id === id ? { ...r, status: 'running' } : r));
-    // Simulate execution
+  const startReprocessing = useCallback((id: string, reason?: string) => {
+    setRoutines(prev => prev.map(r => r.id === id ? { ...r, status: 'running', reason: reason || r.reason } : r));
     const duration = 3000 + Math.random() * 5000;
     setTimeout(() => {
       const success = Math.random() > 0.2;
@@ -93,6 +92,8 @@ export function useRoutines() {
           date: new Date().toLocaleString('pt-BR'),
           status: success ? 'success' as const : 'error' as const,
           duration: `${Math.floor(duration / 1000)}s`,
+          executedBy: 'João Silva',
+          reason: r.reason,
           ...(success ? {} : { errorMessage: 'Falha na conexão com o banco de dados' }),
         };
         return {
