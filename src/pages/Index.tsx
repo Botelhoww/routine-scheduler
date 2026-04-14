@@ -1,16 +1,42 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useRoutines } from '@/hooks/useRoutines';
+import { RoutineSection } from '@/components/RoutineSection';
+import { RoutinePeriod } from '@/types/routine';
+import { RefreshCcw } from 'lucide-react';
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const periods: RoutinePeriod[] = ['dawn', 'morning', 'night'];
+
+export default function Index() {
+  const { getByPeriod, addRoutine, updateRoutine, deleteRoutine, startReprocessing } = useRoutines();
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-card">
+        <div className="container max-w-7xl mx-auto px-4 py-4 flex items-center gap-3">
+          <div className="bg-primary rounded-lg p-2">
+            <RefreshCcw className="h-5 w-5 text-primary-foreground" />
+          </div>
+          <div>
+            <h1 className="font-bold text-lg text-foreground">Reprocessamento de Rotinas</h1>
+            <p className="text-xs text-muted-foreground">Banco de Investimentos — Painel Administrativo</p>
+          </div>
+        </div>
+      </header>
+
+      <main className="container max-w-7xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {periods.map(period => (
+            <RoutineSection
+              key={period}
+              period={period}
+              routines={getByPeriod(period)}
+              onUpdate={updateRoutine}
+              onDelete={deleteRoutine}
+              onStart={startReprocessing}
+              onAdd={addRoutine}
+            />
+          ))}
+        </div>
+      </main>
     </div>
   );
-};
-
-const Index = PlaceholderIndex;
-
-export default Index;
+}
