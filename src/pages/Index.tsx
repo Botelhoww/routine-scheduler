@@ -1,9 +1,6 @@
 import { useRoutines } from '@/hooks/useRoutines';
-import { RoutineSection } from '@/components/RoutineSection';
+import { RoutinePeriodList } from '@/components/RoutinePeriodList';
 import { AppHeader } from '@/components/AppHeader';
-import { RoutinePeriod } from '@/types/routine';
-
-const periods: RoutinePeriod[] = ['dawn', 'morning', 'night'];
 
 export default function Index() {
   const { getByPeriod, addRoutine, updateRoutine, deleteRoutine, startReprocessing, resetStatus } = useRoutines();
@@ -11,22 +8,15 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-
-      <main className="container max-w-7xl mx-auto px-4 py-6 pt-[88px]">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-          {periods.map(period => (
-            <RoutineSection
-              key={period}
-              period={period}
-              routines={getByPeriod(period)}
-              onUpdate={updateRoutine}
-              onDelete={deleteRoutine}
-              onStart={startReprocessing}
-              onReset={resetStatus}
-              onAdd={addRoutine}
-            />
-          ))}
-        </div>
+      <main className="container max-w-[1400px] mx-auto px-4 py-6 pt-[88px]">
+        <RoutinePeriodList
+          getByPeriod={getByPeriod}
+          onUpdate={updateRoutine}
+          onDelete={deleteRoutine}
+          onStart={startReprocessing}
+          onReset={resetStatus}
+          onAdd={addRoutine}
+        />
       </main>
     </div>
   );
