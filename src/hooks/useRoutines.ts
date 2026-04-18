@@ -32,6 +32,24 @@ const mk = (
   };
 };
 
+/** Rotina em ERRO com mensagem (exemplos de visibilidade no painel) */
+const asError = (base: Routine, errorMessage: string, historyId: string): Routine => ({
+  ...base,
+  status: 'error',
+  errorMessage,
+  history: [
+    {
+      id: historyId,
+      date: new Date().toLocaleString('pt-BR'),
+      status: 'error',
+      duration: '12s',
+      errorMessage,
+      executedBy: 'Agendador',
+    },
+    ...base.history,
+  ],
+});
+
 const createMockRoutines = (): Routine[] => {
   const today = new Date();
   const yesterday = new Date(today);
@@ -53,6 +71,11 @@ const createMockRoutines = (): Routine[] => {
     mk({ id: 'm-pnl-2', cod_rotina: 'PMAD0002_1',  grupo: 'PNL', name: 'PMAD0002_1 — PNL Apuração',    exePath: 'C:\\Bank\\PNL\\PMAD0002_1.exe',  reprocessDate: d, dateReference: 'D-1', period: 'dawn', tipo_controle: 'B' }),
     mk({ id: 'm-pnl-3', cod_rotina: 'PMAD0032',    grupo: 'PNL', name: 'PMAD0032 — PNL Fechamento',    exePath: 'C:\\Bank\\PNL\\PMAD0032.exe',    reprocessDate: d, dateReference: 'D-1', period: 'dawn', tipo_controle: 'B' }),
     mk({ id: 'm-pnl-4', cod_rotina: 'PMAD0032_02', grupo: 'PNL', name: 'PMAD0032_02 — PNL Detalhe',    exePath: 'C:\\Bank\\PNL\\PMAD0032_02.exe', reprocessDate: d, dateReference: 'D-1', period: 'dawn', tipo_controle: 'B' }),
+    asError(
+      mk({ id: 'm-err-demo-1', cod_rotina: 'PMAD0099', grupo: 'DEMO', name: 'PMAD0099 — Exemplo ERRO (Madrugada)', exePath: 'C:\\Bank\\DEMO\\PMAD0099.exe', reprocessDate: d, dateReference: 'D-1', period: 'dawn', tipo_controle: 'F' }),
+      'Falha de conexão com o banco: timeout após 30s (servidor 10.1.0.12, instância STAGE).',
+      'hist-err-m-1',
+    ),
 
     // Matutino — BI
     mk({ id: 't-bi-1', cod_rotina: 'PMAT0029',    grupo: 'BI', name: 'PMAT0029 — BI Diário',          exePath: 'C:\\Bank\\BI\\PMAT0029.exe',    reprocessDate: d, dateReference: 'D-1', period: 'morning', tipo_controle: 'B' }),
@@ -64,10 +87,20 @@ const createMockRoutines = (): Routine[] => {
     mk({ id: 't-bi-7', cod_rotina: 'PMAT0014_CHANGE', grupo: 'BI', name: 'PMAT0014 — CHANGE',   exePath: 'C:\\Bank\\BI\\PMAT0014_CHANGE.exe',   reprocessDate: d, dateReference: 'D-1', period: 'morning', tipo_controle: 'D' }),
     mk({ id: 't-bi-8', cod_rotina: 'PMAT0014_VIRTUAL', grupo: 'BI', name: 'PMAT0014 — VIRTUAL',  exePath: 'C:\\Bank\\BI\\PMAT0014_VIRTUAL.exe',  reprocessDate: d, dateReference: 'D-1', period: 'morning', tipo_controle: 'D' }),
     mk({ id: 't-bi-9', cod_rotina: 'PMAT0014_AUTBANK', grupo: 'BI', name: 'PMAT0014 — AUTBANK',  exePath: 'C:\\Bank\\BI\\PMAT0014_AUTBANK.exe',  reprocessDate: d, dateReference: 'D-1', period: 'morning', tipo_controle: 'D' }),
+    asError(
+      mk({ id: 't-err-demo-1', cod_rotina: 'PMAT0099', grupo: 'DEMO', name: 'PMAT0099 — Exemplo ERRO (Matutino)', exePath: 'C:\\Bank\\DEMO\\PMAT0099.exe', reprocessDate: d, dateReference: 'D-1', period: 'morning', tipo_controle: 'B' }),
+      'value cannot be null "dt_referencia" ao atualizar dbo.tab_controle_bi_reprocessamento',
+      'hist-err-t-1',
+    ),
 
     // Noturno — BACEN (Padrão F)
     mk({ id: 'n-bcn-1', cod_rotina: 'PNOT0001', grupo: 'BACEN', name: 'PNOT0001 — BACEN Envio',    exePath: 'C:\\Bank\\BACEN\\PNOT0001.exe', reprocessDate: d, dateReference: 'D+1', period: 'night', tipo_controle: 'F' }),
     mk({ id: 'n-bcn-2', cod_rotina: 'PNOT0002', grupo: 'BACEN', name: 'PNOT0002 — BACEN Posição',  exePath: 'C:\\Bank\\BACEN\\PNOT0002.exe', reprocessDate: d, dateReference: 'D+1', period: 'night', tipo_controle: 'F' }),
+    asError(
+      mk({ id: 'n-err-demo-1', cod_rotina: 'PNOT0099', grupo: 'DEMO', name: 'PNOT0099 — Exemplo ERRO (Noturno)', exePath: 'C:\\Bank\\DEMO\\PNOT0099.exe', reprocessDate: d, dateReference: 'D+1', period: 'night', tipo_controle: 'F' }),
+      'Integração BACEN retornou código REJ998: arquivo de posição rejeitado por inconsistência de saldo.',
+      'hist-err-n-1',
+    ),
   ];
 };
 
@@ -119,11 +152,6 @@ export function useRoutines() {
     setRoutines(prev => prev.filter(r => r.id !== id));
   }, []);
 
-  const deleteRoutines = useCallback((ids: string[]) => {
-    const drop = new Set(ids);
-    setRoutines(prev => prev.filter(r => !drop.has(r.id)));
-  }, []);
-
   const resetStatus = useCallback((id: string) => {
     setRoutines(prev => prev.map(r => r.id === id ? { ...r, status: 'idle', errorMessage: undefined } : r));
   }, []);
@@ -163,7 +191,7 @@ export function useRoutines() {
 
   const getByPeriod = useCallback((period: RoutinePeriod) => routines.filter(r => r.period === period), [routines]);
 
-  return { routines, addRoutine, updateRoutine, deleteRoutine, deleteRoutines, startReprocessing, resetStatus, getByPeriod };
+  return { routines, addRoutine, updateRoutine, deleteRoutine, startReprocessing, resetStatus, getByPeriod };
 }
 
 export function calculateProcessingDate(baseDate: string, ref: DateReference): string {

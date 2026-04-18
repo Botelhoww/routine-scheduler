@@ -10,8 +10,8 @@ import { ConfirmReprocessDialog } from './ConfirmReprocessDialog';
 import { ConfirmDialog } from './ConfirmDialog';
 import { EditRoutineSheet } from './EditRoutineSheet';
 import { InlineHistory } from './InlineHistory';
-import { Play, Pencil, Trash2, History, RotateCcw, FileText, ChevronRight } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Play, Pencil, Trash2, History, RotateCcw, FileText, ChevronRight, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -20,22 +20,26 @@ interface Props {
   onDelete: (id: string) => void;
   onStart: (id: string, reason?: string) => void;
   onReset: (id: string) => void;
-  selected?: boolean;
-  onSelectToggle?: (id: string) => void;
 }
 
-export function RoutineRow({ routine, onUpdate, onDelete, onStart, onReset, selected, onSelectToggle }: Props) {
+export function RoutineRow({ routine, onUpdate, onDelete, onStart, onReset }: Props) {
   const [editing, setEditing] = useState(false);
   const [confirmStart, setConfirmStart] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [errorDetailOpen, setErrorDetailOpen] = useState(false);
 
   const processedDate = calculateProcessingDate(routine.reprocessDate, routine.dateReference);
   const blockedReason = getRoutineStartBlockedReason(routine);
   const canStart = !blockedReason;
   const lastRun = routine.history[0];
 
+  const errorDetail =
+    routine.errorMessage?.trim() ||
+    routine.history.find(h => h.status === 'error')?.errorMessage?.trim();
+
   const disabledReason = blockedReason ?? '';
+  const actionsLocked = routine.status === 'running';
 
   const startBtn = (
     <Button
@@ -50,31 +54,60 @@ export function RoutineRow({ routine, onUpdate, onDelete, onStart, onReset, sele
     </Button>
   );
 
+  const runningSpinner = (
+    <Button
+      size="icon"
+      variant="ghost"
+      disabled
+      className="h-7 w-7 text-info cursor-not-allowed opacity-100"
+      aria-label="Em execução"
+    >
+      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+    </Button>
+  );
+
+  const isRowAccent = routine.status === 'error' || routine.status === 'running';
+
   return (
     <>
       <div
+        aria-busy={routine.status === 'running'}
         className={cn(
-          "group grid grid-cols-[auto_2.4fr_0.7fr_0.9fr_1.6fr_0.6fr_1fr_0.9fr_auto] items-center gap-3 px-4 py-2 border-b border-border/60 text-xs hover:bg-muted/40 transition-colors",
-          routine.status === 'error' && 'bg-destructive/[0.03]',
-          routine.status === 'running' && 'bg-info/[0.04]',
+          "group grid grid-cols-[2.4fr_0.7fr_0.9fr_1.6fr_0.6fr_1fr_0.9fr_auto] items-center gap-3 px-4 py-2 border-b border-border/60 text-xs transition-colors",
+          !isRowAccent && 'hover:bg-muted/40',
+          routine.status === 'error' &&
+            'bg-destructive/10 border-l-4 border-l-destructive hover:bg-destructive/[0.14]',
+          routine.status === 'running' &&
+            'bg-info/[0.06] border-l-4 border-l-info ring-1 ring-inset ring-info/25 hover:bg-info/[0.09]',
         )}
       >
-        <div className="flex items-center justify-center w-8 shrink-0" onClick={e => e.stopPropagation()}>
-          <Checkbox
-            checked={!!selected}
-            onCheckedChange={() => onSelectToggle?.(routine.id)}
-            aria-label={`Selecionar ${routine.name}`}
-          />
-        </div>
-
         {/* Código + Nome */}
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {routine.status === 'running' && (
+              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-info" aria-hidden />
+            )}
             {routine.cod_rotina && (
               <span className="font-mono text-[11px] text-muted-foreground shrink-0">{routine.cod_rotina}</span>
             )}
             <span className="text-muted-foreground/60">—</span>
             <span className="font-medium text-foreground truncate">{routine.name}</span>
+            {routine.status === 'error' && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="shrink-0 rounded p-0.5 text-destructive hover:bg-destructive/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label="Ver detalhe do erro"
+                  >
+                    <AlertCircle className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-sm text-xs leading-snug">
+                  {errorDetail || 'Erro na última execução (sem mensagem detalhada).'}
+                </TooltipContent>
+              </Tooltip>
+            )}
             {routine.reason && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -84,9 +117,11 @@ export function RoutineRow({ routine, onUpdate, onDelete, onStart, onReset, sele
               </Tooltip>
             )}
           </div>
-          {routine.grupo && (
+          {routine.status === 'running' ? (
+            <span className="text-[10px] font-medium text-info">Em execução… aguarde o retorno.</span>
+          ) : routine.grupo ? (
             <span className="text-[10px] text-muted-foreground">Grupo: {routine.grupo}</span>
-          )}
+          ) : null}
         </div>
 
         {/* Padrão */}
@@ -120,12 +155,19 @@ export function RoutineRow({ routine, onUpdate, onDelete, onStart, onReset, sele
 
         {/* Ações */}
         <div className="flex items-center gap-0.5 justify-end">
-          {!canStart ? (
+          {routine.status === 'running' ? (
+            <Tooltip>
+              <TooltipTrigger asChild><span>{runningSpinner}</span></TooltipTrigger>
+              <TooltipContent className="text-xs">Em execução — aguarde a conclusão.</TooltipContent>
+            </Tooltip>
+          ) : !canStart ? (
             <Tooltip>
               <TooltipTrigger asChild><span>{startBtn}</span></TooltipTrigger>
               <TooltipContent className="text-xs">{disabledReason || 'Preencha todos os campos antes de iniciar'}</TooltipContent>
             </Tooltip>
-          ) : startBtn}
+          ) : (
+            startBtn
+          )}
           {routine.status === 'error' && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -139,24 +181,46 @@ export function RoutineRow({ routine, onUpdate, onDelete, onStart, onReset, sele
           {routine.history.length > 0 && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button size="icon" variant="ghost" onClick={() => setShowHistory(v => !v)} className="h-7 w-7 relative">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => setShowHistory(v => !v)}
+                  disabled={actionsLocked}
+                  className="h-7 w-7 relative"
+                >
                   <History className="h-3.5 w-3.5" />
                   <span className="absolute -top-0.5 -right-0.5 text-[9px] font-bold bg-primary text-primary-foreground rounded-full h-3.5 min-w-3.5 px-1 flex items-center justify-center">
                     {routine.history.length}
                   </span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent className="text-xs">Histórico ({routine.history.length})</TooltipContent>
+              <TooltipContent className="text-xs">
+                {actionsLocked ? 'Disponível após o fim da execução.' : `Histórico (${routine.history.length})`}
+              </TooltipContent>
             </Tooltip>
           )}
-          <Button size="icon" variant="ghost" onClick={() => setEditing(true)} disabled={routine.status === 'running'} className="h-7 w-7">
+          <Button size="icon" variant="ghost" onClick={() => setEditing(true)} disabled={actionsLocked} className="h-7 w-7">
             <Pencil className="h-3.5 w-3.5" />
           </Button>
-          <Button size="icon" variant="ghost" onClick={() => setConfirmDelete(true)} disabled={routine.status === 'running'} className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10">
+          <Button size="icon" variant="ghost" onClick={() => setConfirmDelete(true)} disabled={actionsLocked} className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10">
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
+
+      {routine.status === 'error' && errorDetail && (
+        <Collapsible open={errorDetailOpen} onOpenChange={setErrorDetailOpen} className="border-b border-border/60 bg-destructive/[0.06]">
+          <CollapsibleTrigger className="flex w-full items-center gap-2 px-4 py-1.5 text-left text-[10px] font-semibold uppercase tracking-wide text-destructive hover:bg-destructive/10">
+            <ChevronDown className={cn('h-3 w-3 shrink-0 transition-transform', errorDetailOpen && 'rotate-180')} />
+            Detalhe do erro
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-4 pb-3 text-[11px] leading-relaxed text-foreground whitespace-pre-wrap border-t border-destructive/15">
+              {errorDetail}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
 
       {showHistory && routine.history.length > 0 && (
         <div className="bg-muted/30 border-b border-border/60 px-4 py-2">
@@ -193,29 +257,9 @@ export function RoutineRow({ routine, onUpdate, onDelete, onStart, onReset, sele
 }
 
 /** Cabeçalho da tabela densa — ícone de chevron para alinhar com a área de ações */
-export function RoutineRowHeader({
-  selectAll,
-}: {
-  selectAll?: {
-    checked: boolean | 'indeterminate';
-    onToggle: () => void;
-    disabled?: boolean;
-  };
-}) {
+export function RoutineRowHeader() {
   return (
-    <div className="grid grid-cols-[auto_2.4fr_0.7fr_0.9fr_1.6fr_0.6fr_1fr_0.9fr_auto] items-center gap-3 px-4 py-2 border-b border-border bg-muted/40 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-      <div className="flex items-center justify-center w-8 shrink-0">
-        {selectAll ? (
-          <Checkbox
-            checked={selectAll.checked}
-            onCheckedChange={selectAll.onToggle}
-            disabled={selectAll.disabled}
-            aria-label="Selecionar todas do período"
-          />
-        ) : (
-          <span className="sr-only">Sel.</span>
-        )}
-      </div>
+    <div className="grid grid-cols-[2.4fr_0.7fr_0.9fr_1.6fr_0.6fr_1fr_0.9fr_auto] items-center gap-3 px-4 py-2 border-b border-border bg-muted/40 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
       <span>Rotina</span>
       <span className="text-center">Padrão</span>
       <span>Banco</span>

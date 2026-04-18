@@ -3,14 +3,9 @@ import { Routine, RoutinePeriod, RoutineStatus, DateReference } from '@/types/ro
 import { RoutineRow, RoutineRowHeader } from './RoutineRow';
 import { AddRoutineDrawer } from './AddRoutineDrawer';
 import { RoutineFiltersToolbar } from './RoutineFiltersToolbar';
-import { BulkReprocessDialog } from './BulkReprocessDialog';
-import { ConfirmDialog } from './ConfirmDialog';
-import { Moon, Sun, Sunrise, ChevronDown, AlertCircle, Loader2, CheckCircle2, Clock, Play, Trash2 } from 'lucide-react';
+import { Moon, Sun, Sunrise, ChevronDown, AlertCircle, Loader2, CheckCircle2, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { routineCanStart } from '@/lib/routine-eligibility';
-import { toast } from 'sonner';
 
 const STORAGE_KEY = 'bsg-period-accordion-state';
 
@@ -52,13 +47,12 @@ interface Props {
   routines: Routine[];
   onUpdate: (id: string, updates: Partial<Routine>) => void;
   onDelete: (id: string) => void;
-  onDeleteMany: (ids: string[]) => void;
   onStart: (id: string, reason?: string) => void;
   onReset: (id: string) => void;
   onAdd: (routine: any) => void;
 }
 
-export function RoutinePeriodList({ routines, onUpdate, onDelete, onDeleteMany, onStart, onReset, onAdd }: Props) {
+export function RoutinePeriodList({ routines, onUpdate, onDelete, onStart, onReset, onAdd }: Props) {
   const [open, setOpen] = useState<Record<RoutinePeriod, boolean>>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -71,10 +65,6 @@ export function RoutinePeriodList({ routines, onUpdate, onDelete, onDeleteMany, 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<Set<RoutineStatus>>(() => new Set());
   const [dateRefFilter, setDateRefFilter] = useState<Set<DateReference>>(() => new Set());
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
-
-  const [bulkReprocessOpen, setBulkReprocessOpen] = useState(false);
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(open));
@@ -86,11 +76,6 @@ export function RoutinePeriodList({ routines, onUpdate, onDelete, onDeleteMany, 
     () => applyRoutineFilters(routines, searchQuery, statusFilter, dateRefFilter),
     [routines, searchQuery, statusFilter, dateRefFilter],
   );
-
-  useEffect(() => {
-    const allowed = new Set(filteredRoutines.map(r => r.id));
-    setSelectedIds(prev => new Set([...prev].filter(id => allowed.has(id))));
-  }, [filteredRoutines]);
 
   const toggleStatus = useCallback((s: RoutineStatus) => {
     setStatusFilter(prev => {
@@ -118,69 +103,6 @@ export function RoutinePeriodList({ routines, onUpdate, onDelete, onDeleteMany, 
     setDateRefFilter(new Set());
   }, []);
 
-  const toggleSelect = useCallback((id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const togglePeriodSelection = useCallback((periodIds: string[]) => {
-    if (periodIds.length === 0) return;
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      const allNow = periodIds.every(id => next.has(id));
-      if (allNow) periodIds.forEach(id => next.delete(id));
-      else periodIds.forEach(id => next.add(id));
-      return next;
-    });
-  }, []);
-
-  const selectedRoutines = useMemo(
-    () => routines.filter(r => selectedIds.has(r.id)),
-    [routines, selectedIds],
-  );
-
-  const selectedCount = selectedIds.size;
-
-  const bulkReprocessEligible = useMemo(
-    () => selectedRoutines.filter(routineCanStart),
-    [selectedRoutines],
-  );
-  const bulkReprocessSkipped = selectedRoutines.length - bulkReprocessEligible.length;
-
-  const bulkDeleteEligible = useMemo(
-    () => selectedRoutines.filter(r => r.status !== 'running'),
-    [selectedRoutines],
-  );
-  const bulkDeleteSkipped = selectedRoutines.length - bulkDeleteEligible.length;
-
-  const handleBulkReprocessConfirm = useCallback((reason?: string) => {
-    bulkReprocessEligible.forEach(r => onStart(r.id, reason));
-    toast.success(`${bulkReprocessEligible.length} reprocessamento(s) iniciado(s).`);
-    setBulkReprocessOpen(false);
-    setSelectedIds(new Set());
-  }, [bulkReprocessEligible, onStart]);
-
-  const handleBulkDeleteConfirm = useCallback(() => {
-    if (bulkDeleteEligible.length === 0) {
-      toast.error('Nenhuma rotina pode ser excluída (apenas em execução ou nada selecionado).');
-      setBulkDeleteOpen(false);
-      return;
-    }
-    onDeleteMany(bulkDeleteEligible.map(r => r.id));
-    toast.success(`${bulkDeleteEligible.length} rotina(s) excluída(s).`);
-    if (bulkDeleteSkipped > 0) {
-      toast.message(`${bulkDeleteSkipped} em execução não ${bulkDeleteSkipped !== 1 ? 'foram excluídas' : 'foi excluída'}.`);
-    }
-    setBulkDeleteOpen(false);
-    setSelectedIds(new Set());
-  }, [bulkDeleteEligible, bulkDeleteSkipped, onDeleteMany]);
-
-  const contentPt = selectedCount > 0 ? 'pt-[9.875rem]' : 'pt-[7.125rem]';
-
   return (
     <>
       <div className="fixed top-16 left-0 right-0 z-40 border-b border-border shadow-sm bg-card">
@@ -195,50 +117,10 @@ export function RoutinePeriodList({ routines, onUpdate, onDelete, onDeleteMany, 
             onClearFilters={clearFilters}
             hasActiveFilters={hasActiveFilters}
           />
-          {selectedCount > 0 && (
-            <div className="flex flex-wrap items-center gap-3 px-4 py-2 border-t border-border bg-muted/40 text-xs">
-              <span className="font-medium text-foreground">
-                {selectedCount} selecionada{selectedCount !== 1 ? 's' : ''}
-              </span>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="default"
-                  className="h-8 gap-1.5 bg-success text-success-foreground hover:bg-success/90"
-                  disabled={bulkReprocessEligible.length === 0}
-                  onClick={() => setBulkReprocessOpen(true)}
-                >
-                  <Play className="h-3.5 w-3.5" />
-                  Reprocessar selecionadas
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="destructive"
-                  className="h-8 gap-1.5"
-                  disabled={bulkDeleteEligible.length === 0}
-                  onClick={() => setBulkDeleteOpen(true)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Excluir selecionadas
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-8"
-                  onClick={() => setSelectedIds(new Set())}
-                >
-                  Limpar seleção
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      <div className={cn('space-y-3', contentPt)}>
+      <div className={cn('space-y-3 pt-[7.125rem]')}>
         {periods.map(period => {
           const cfg = periodConfig[period];
           const Icon = cfg.icon;
@@ -259,36 +141,10 @@ export function RoutinePeriodList({ routines, onUpdate, onDelete, onDeleteMany, 
               onStart={onStart}
               onReset={onReset}
               onAdd={onAdd}
-              selectedIds={selectedIds}
-              onSelectToggle={toggleSelect}
-              onTogglePeriodSelection={togglePeriodSelection}
             />
           );
         })}
       </div>
-
-      <BulkReprocessDialog
-        open={bulkReprocessOpen}
-        onOpenChange={setBulkReprocessOpen}
-        eligibleCount={bulkReprocessEligible.length}
-        skippedCount={bulkReprocessSkipped}
-        skippedReason={bulkReprocessSkipped > 0 ? 'fora das regras de disparo (aguarde conclusão, erro, dados, etc.)' : undefined}
-        onConfirm={handleBulkReprocessConfirm}
-      />
-
-      <ConfirmDialog
-        open={bulkDeleteOpen}
-        onOpenChange={setBulkDeleteOpen}
-        title="Excluir rotinas selecionadas"
-        description={`Excluir ${bulkDeleteEligible.length} rotina(s)? Esta ação não pode ser desfeita.${
-          bulkDeleteSkipped > 0
-            ? ` ${bulkDeleteSkipped} rotina(s) em execução serão ignorada(s).`
-            : ''
-        }`}
-        confirmLabel="Excluir"
-        variant="destructive"
-        onConfirm={handleBulkDeleteConfirm}
-      />
     </>
   );
 }
@@ -305,9 +161,6 @@ interface AccordionProps {
   onStart: (id: string, reason?: string) => void;
   onReset: (id: string) => void;
   onAdd: (routine: any) => void;
-  selectedIds: Set<string>;
-  onSelectToggle: (id: string) => void;
-  onTogglePeriodSelection: (periodIds: string[]) => void;
 }
 
 const STATUS_PRIORITY: Record<Routine['status'], number> = {
@@ -329,9 +182,6 @@ function PeriodAccordion({
   onStart,
   onReset,
   onAdd,
-  selectedIds,
-  onSelectToggle,
-  onTogglePeriodSelection,
 }: AccordionProps) {
   const routines = useMemo(
     () => [...rawRoutines].sort((a, b) => {
@@ -349,21 +199,6 @@ function PeriodAccordion({
     success: routines.filter(r => r.status === 'success').length,
     error: routines.filter(r => r.status === 'error').length,
   }), [routines]);
-
-  const idsInPeriod = useMemo(() => routines.map(r => r.id), [routines]);
-  const allSelected = idsInPeriod.length > 0 && idsInPeriod.every(id => selectedIds.has(id));
-  const someSelected = idsInPeriod.some(id => selectedIds.has(id));
-
-  const toggleSelectAll = useCallback(() => {
-    onTogglePeriodSelection(idsInPeriod);
-  }, [idsInPeriod, onTogglePeriodSelection]);
-
-  const selectAllProps = idsInPeriod.length === 0
-    ? { checked: false as const, onToggle: () => {}, disabled: true }
-    : {
-        checked: (allSelected ? true : someSelected ? 'indeterminate' : false) as boolean | 'indeterminate',
-        onToggle: toggleSelectAll,
-      };
 
   return (
     <section className="bg-card border border-border rounded-lg overflow-hidden shadow-sm">
@@ -402,7 +237,7 @@ function PeriodAccordion({
             </div>
           ) : (
             <>
-              <RoutineRowHeader selectAll={selectAllProps} />
+              <RoutineRowHeader />
               {routines.map(r => (
                 <RoutineRow
                   key={r.id}
@@ -411,8 +246,6 @@ function PeriodAccordion({
                   onDelete={onDelete}
                   onStart={onStart}
                   onReset={onReset}
-                  selected={selectedIds.has(r.id)}
-                  onSelectToggle={onSelectToggle}
                 />
               ))}
             </>
