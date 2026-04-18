@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Routine } from '@/types/routine';
 import { calculateProcessingDate } from '@/hooks/useRoutines';
+import { getRoutineStartBlockedReason } from '@/lib/routine-eligibility';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +11,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { EditRoutineSheet } from './EditRoutineSheet';
 import { InlineHistory } from './InlineHistory';
 import { Play, Pencil, Trash2, History, RotateCcw, FileText, ChevronRight } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -18,25 +20,22 @@ interface Props {
   onDelete: (id: string) => void;
   onStart: (id: string, reason?: string) => void;
   onReset: (id: string) => void;
+  selected?: boolean;
+  onSelectToggle?: (id: string) => void;
 }
 
-export function RoutineRow({ routine, onUpdate, onDelete, onStart, onReset }: Props) {
+export function RoutineRow({ routine, onUpdate, onDelete, onStart, onReset, selected, onSelectToggle }: Props) {
   const [editing, setEditing] = useState(false);
   const [confirmStart, setConfirmStart] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
   const processedDate = calculateProcessingDate(routine.reprocessDate, routine.dateReference);
-  const isExeValid = routine.exePath.toLowerCase().endsWith('.exe');
-  const canStart = isExeValid && routine.reprocessDate && routine.status !== 'running' && routine.status !== 'error';
+  const blockedReason = getRoutineStartBlockedReason(routine);
+  const canStart = !blockedReason;
   const lastRun = routine.history[0];
 
-  const disabledReason = !routine.reprocessDate
-    ? 'Selecione uma data antes de iniciar'
-    : !isExeValid ? 'Caminho do .exe inválido'
-    : routine.status === 'running' ? 'Rotina já em execução'
-    : routine.status === 'error' ? 'Resete o status (ERRO) antes de reiniciar'
-    : '';
+  const disabledReason = blockedReason ?? '';
 
   const startBtn = (
     <Button
@@ -55,11 +54,19 @@ export function RoutineRow({ routine, onUpdate, onDelete, onStart, onReset }: Pr
     <>
       <div
         className={cn(
-          "group grid grid-cols-[2.4fr_0.7fr_0.9fr_1.6fr_0.6fr_1fr_0.9fr_auto] items-center gap-3 px-4 py-2 border-b border-border/60 text-xs hover:bg-muted/40 transition-colors",
+          "group grid grid-cols-[auto_2.4fr_0.7fr_0.9fr_1.6fr_0.6fr_1fr_0.9fr_auto] items-center gap-3 px-4 py-2 border-b border-border/60 text-xs hover:bg-muted/40 transition-colors",
           routine.status === 'error' && 'bg-destructive/[0.03]',
           routine.status === 'running' && 'bg-info/[0.04]',
         )}
       >
+        <div className="flex items-center justify-center w-8 shrink-0" onClick={e => e.stopPropagation()}>
+          <Checkbox
+            checked={!!selected}
+            onCheckedChange={() => onSelectToggle?.(routine.id)}
+            aria-label={`Selecionar ${routine.name}`}
+          />
+        </div>
+
         {/* Código + Nome */}
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
@@ -186,9 +193,29 @@ export function RoutineRow({ routine, onUpdate, onDelete, onStart, onReset }: Pr
 }
 
 /** Cabeçalho da tabela densa — ícone de chevron para alinhar com a área de ações */
-export function RoutineRowHeader() {
+export function RoutineRowHeader({
+  selectAll,
+}: {
+  selectAll?: {
+    checked: boolean | 'indeterminate';
+    onToggle: () => void;
+    disabled?: boolean;
+  };
+}) {
   return (
-    <div className="grid grid-cols-[2.4fr_0.7fr_0.9fr_1.6fr_0.6fr_1fr_0.9fr_auto] items-center gap-3 px-4 py-2 border-b border-border bg-muted/40 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="grid grid-cols-[auto_2.4fr_0.7fr_0.9fr_1.6fr_0.6fr_1fr_0.9fr_auto] items-center gap-3 px-4 py-2 border-b border-border bg-muted/40 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="flex items-center justify-center w-8 shrink-0">
+        {selectAll ? (
+          <Checkbox
+            checked={selectAll.checked}
+            onCheckedChange={selectAll.onToggle}
+            disabled={selectAll.disabled}
+            aria-label="Selecionar todas do período"
+          />
+        ) : (
+          <span className="sr-only">Sel.</span>
+        )}
+      </div>
       <span>Rotina</span>
       <span className="text-center">Padrão</span>
       <span>Banco</span>

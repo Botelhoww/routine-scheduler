@@ -119,6 +119,11 @@ export function useRoutines() {
     setRoutines(prev => prev.filter(r => r.id !== id));
   }, []);
 
+  const deleteRoutines = useCallback((ids: string[]) => {
+    const drop = new Set(ids);
+    setRoutines(prev => prev.filter(r => !drop.has(r.id)));
+  }, []);
+
   const resetStatus = useCallback((id: string) => {
     setRoutines(prev => prev.map(r => r.id === id ? { ...r, status: 'idle', errorMessage: undefined } : r));
   }, []);
@@ -158,7 +163,7 @@ export function useRoutines() {
 
   const getByPeriod = useCallback((period: RoutinePeriod) => routines.filter(r => r.period === period), [routines]);
 
-  return { routines, addRoutine, updateRoutine, deleteRoutine, startReprocessing, resetStatus, getByPeriod };
+  return { routines, addRoutine, updateRoutine, deleteRoutine, deleteRoutines, startReprocessing, resetStatus, getByPeriod };
 }
 
 export function calculateProcessingDate(baseDate: string, ref: DateReference): string {
