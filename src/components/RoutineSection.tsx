@@ -20,10 +20,11 @@ interface Props {
   onUpdate: (id: string, updates: Partial<Routine>) => void;
   onDelete: (id: string) => void;
   onStart: (id: string, reason?: string) => void;
+  onReset: (id: string) => void;
   onAdd: (routine: any) => void;
 }
 
-export function RoutineSection({ period, routines, onUpdate, onDelete, onStart, onAdd }: Props) {
+export function RoutineSection({ period, routines, onUpdate, onDelete, onStart, onReset, onAdd }: Props) {
   const config = periodConfig[period];
   const Icon = config.icon;
   const totalPages = Math.max(1, Math.ceil(routines.length / ITEMS_PER_PAGE));
@@ -73,7 +74,7 @@ export function RoutineSection({ period, routines, onUpdate, onDelete, onStart, 
             <p className="text-sm text-muted-foreground text-center py-6">Nenhuma rotina cadastrada</p>
           )}
           {paginatedRoutines.map(r => (
-            <RoutineCard key={r.id} routine={r} onUpdate={onUpdate} onDelete={onDelete} onStart={onStart} />
+            <RoutineCard key={r.id} routine={r} onUpdate={onUpdate} onDelete={onDelete} onStart={onStart} onReset={onReset} />
           ))}
           {routines.length > 0 && paginatedRoutines.length < ITEMS_PER_PAGE && paginatedRoutines.length > 0 && (
             <div className="flex-1" />

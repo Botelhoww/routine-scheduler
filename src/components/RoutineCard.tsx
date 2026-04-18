@@ -1,17 +1,20 @@
 import { useState } from 'react';
-import { Routine, DateReference } from '@/types/routine';
+import { Routine, DateReference, ControlPattern } from '@/types/routine';
+import { CONTROL_PATTERNS } from '@/types/control-pattern';
 import { calculateProcessingDate } from '@/hooks/useRoutines';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from './StatusBadge';
 import { ConfirmReprocessDialog } from './ConfirmReprocessDialog';
 import { ConfirmDialog } from './ConfirmDialog';
 import { InlineHistory } from './InlineHistory';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Play, Pencil, Trash2, FolderOpen, Save, X, Info, FileText, History } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Play, Pencil, Trash2, FolderOpen, Save, X, Info, FileText, History, RotateCcw, Database, AlertTriangle } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -19,20 +22,17 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { CalendarIcon } from 'lucide-react';
 
-const dateRefLabels: Record<DateReference, string> = {
-  'D-1': 'Dia anterior à data selecionada',
-  'D0': 'A própria data selecionada',
-  'D+1': 'Dia seguinte à data selecionada',
-};
+const PATTERNS: ControlPattern[] = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 interface Props {
   routine: Routine;
   onUpdate: (id: string, updates: Partial<Routine>) => void;
   onDelete: (id: string) => void;
   onStart: (id: string, reason?: string) => void;
+  onReset: (id: string) => void;
 }
 
-export function RoutineCard({ routine, onUpdate, onDelete, onStart }: Props) {
+export function RoutineCard({ routine, onUpdate, onDelete, onStart, onReset }: Props) {
   const [editing, setEditing] = useState(false);
   const [confirmStart, setConfirmStart] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -42,10 +42,14 @@ export function RoutineCard({ routine, onUpdate, onDelete, onStart }: Props) {
   const [editDate, setEditDate] = useState(routine.reprocessDate);
   const [editRef, setEditRef] = useState<DateReference>(routine.dateReference);
   const [editReason, setEditReason] = useState(routine.reason || '');
+  const [editTipo, setEditTipo] = useState<ControlPattern>(routine.tipo_controle);
+  const [editScript, setEditScript] = useState(routine.script_preparacao || '');
+  const [editProduto, setEditProduto] = useState(routine.produto_reprocessar || '');
 
   const processedDate = calculateProcessingDate(routine.reprocessDate, routine.dateReference);
   const isExeValid = routine.exePath.toLowerCase().endsWith('.exe');
-  const canStart = isExeValid && routine.reprocessDate && routine.status !== 'running';
+  const canStart = isExeValid && routine.reprocessDate && routine.status !== 'running' && routine.status !== 'error';
+  const editInfo = CONTROL_PATTERNS[editTipo];
 
   const disabledReason = !routine.reprocessDate
     ? 'Selecione uma data antes de iniciar'
@@ -53,11 +57,22 @@ export function RoutineCard({ routine, onUpdate, onDelete, onStart }: Props) {
     ? 'Caminho do .exe inválido'
     : routine.status === 'running'
     ? 'Rotina já em execução'
+    : routine.status === 'error'
+    ? 'Resete o status (ERRO) antes de reiniciar'
     : '';
 
   const handleSave = () => {
     if (!editExe.toLowerCase().endsWith('.exe')) return;
-    onUpdate(routine.id, { name: editName, exePath: editExe, reprocessDate: editDate, dateReference: editRef, reason: editReason || undefined });
+    onUpdate(routine.id, {
+      name: editName,
+      exePath: editExe,
+      reprocessDate: editDate,
+      dateReference: editRef,
+      reason: editReason || undefined,
+      tipo_controle: editTipo,
+      script_preparacao: editInfo.needsScript ? (editScript || undefined) : undefined,
+      produto_reprocessar: editInfo.needsProduct ? editProduto : undefined,
+    });
     setEditing(false);
   };
 
@@ -67,6 +82,9 @@ export function RoutineCard({ routine, onUpdate, onDelete, onStart }: Props) {
     setEditDate(routine.reprocessDate);
     setEditRef(routine.dateReference);
     setEditReason(routine.reason || '');
+    setEditTipo(routine.tipo_controle);
+    setEditScript(routine.script_preparacao || '');
+    setEditProduto(routine.produto_reprocessar || '');
     setEditing(false);
   };
 
@@ -85,12 +103,22 @@ export function RoutineCard({ routine, onUpdate, onDelete, onStart }: Props) {
     <>
       <Card className="transition-shadow hover:shadow-md">
         <CardContent className="p-5">
-          <div className="flex items-start justify-between mb-3">
+          <div className="flex items-start justify-between mb-3 gap-2">
             <div className="flex-1 min-w-0">
               {editing ? (
                 <Input value={editName} onChange={e => setEditName(e.target.value)} className="font-semibold text-sm mb-2" />
               ) : (
-                <h3 className="font-semibold text-foreground truncate">{routine.name}</h3>
+                <>
+                  <h3 className="font-semibold text-foreground truncate">{routine.name}</h3>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-mono border-primary/30 text-primary">
+                      Padrão {routine.tipo_controle}
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-mono gap-1">
+                      <Database className="h-2.5 w-2.5" /> {routine.banco}
+                    </Badge>
+                  </div>
+                </>
               )}
             </div>
             <StatusBadge status={routine.status} />
@@ -102,6 +130,18 @@ export function RoutineCard({ routine, onUpdate, onDelete, onStart }: Props) {
 
           {editing ? (
             <div className="space-y-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Tipo de Controle</Label>
+                <Select value={editTipo} onValueChange={v => setEditTipo(v as ControlPattern)}>
+                  <SelectTrigger className="mt-1 h-9 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PATTERNS.map(p => (
+                      <SelectItem key={p} value={p} className="text-xs">{CONTROL_PATTERNS[p].label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-muted-foreground mt-1 font-mono">{editInfo.banco} / {editInfo.tabela}</p>
+              </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Caminho do executável</Label>
                 <div className="relative">
@@ -157,6 +197,27 @@ export function RoutineCard({ routine, onUpdate, onDelete, onStart }: Props) {
                   <p className="text-xs text-muted-foreground mt-1.5">→ Será processado com: <strong>{calculateProcessingDate(editDate, editRef)}</strong></p>
                 )}
               </div>
+              {editInfo.needsScript && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Script de preparação (opcional)</Label>
+                  <Textarea
+                    value={editScript}
+                    onChange={e => setEditScript(e.target.value)}
+                    placeholder={`UPDATE ${editInfo.banco}.dbo.${editInfo.tabela} SET ...`}
+                    className="mt-1 text-xs font-mono min-h-[60px]"
+                  />
+                </div>
+              )}
+              {editInfo.needsProduct && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Produto a reprocessar</Label>
+                  <Input value={editProduto} onChange={e => setEditProduto(e.target.value)} className="mt-1 text-xs" />
+                  <div className="flex items-start gap-1.5 mt-1.5 text-[11px] bg-warning/10 text-warning-foreground border border-warning/40 rounded p-1.5">
+                    <AlertTriangle className="h-3 w-3 shrink-0 text-warning mt-0.5" />
+                    <span>Restaurar produtos ativos após a execução.</span>
+                  </div>
+                </div>
+              )}
               <div>
                 <Label className="text-xs text-muted-foreground">Motivo do reprocessamento (opcional)</Label>
                 <Textarea
@@ -189,6 +250,9 @@ export function RoutineCard({ routine, onUpdate, onDelete, onStart }: Props) {
                   <span>Ref: <strong className="text-foreground">{routine.dateReference}</strong></span>
                 </div>
                 <p>→ Processado com: <strong className="text-foreground">{processedDate}</strong></p>
+                {routine.tipo_controle === 'E' && routine.produto_reprocessar && (
+                  <p>Produto: <strong className="text-foreground font-mono">{routine.produto_reprocessar}</strong></p>
+                )}
                 {routine.reason && (
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -202,7 +266,7 @@ export function RoutineCard({ routine, onUpdate, onDelete, onStart }: Props) {
                 )}
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex gap-1">
                   {!canStart ? (
                     <Tooltip>
@@ -210,6 +274,11 @@ export function RoutineCard({ routine, onUpdate, onDelete, onStart }: Props) {
                       <TooltipContent className="text-xs">{disabledReason || 'Preencha todos os campos antes de iniciar'}</TooltipContent>
                     </Tooltip>
                   ) : startButton}
+                  {routine.status === 'error' && (
+                    <Button size="sm" variant="outline" onClick={() => onReset(routine.id)} className="gap-1.5 text-xs border-destructive/40 text-destructive hover:bg-destructive/10">
+                      <RotateCcw className="h-3.5 w-3.5" /> Resetar
+                    </Button>
+                  )}
                   <Button size="sm" variant="ghost" onClick={() => setEditing(true)} disabled={routine.status === 'running'}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>

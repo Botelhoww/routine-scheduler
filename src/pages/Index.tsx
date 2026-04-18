@@ -6,7 +6,7 @@ import { RoutinePeriod } from '@/types/routine';
 const periods: RoutinePeriod[] = ['dawn', 'morning', 'night'];
 
 export default function Index() {
-  const { getByPeriod, addRoutine, updateRoutine, deleteRoutine, startReprocessing } = useRoutines();
+  const { getByPeriod, addRoutine, updateRoutine, deleteRoutine, startReprocessing, resetStatus } = useRoutines();
 
   return (
     <div className="min-h-screen bg-background">
@@ -22,6 +22,7 @@ export default function Index() {
               onUpdate={updateRoutine}
               onDelete={deleteRoutine}
               onStart={startReprocessing}
+              onReset={resetStatus}
               onAdd={addRoutine}
             />
           ))}
