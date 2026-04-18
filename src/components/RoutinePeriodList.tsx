@@ -91,7 +91,23 @@ interface AccordionProps {
   onAdd: (routine: any) => void;
 }
 
-function PeriodAccordion({ period, isOpen, onToggle, routines, cfg, Icon, onUpdate, onDelete, onStart, onReset, onAdd }: AccordionProps) {
+const STATUS_PRIORITY: Record<Routine['status'], number> = {
+  error: 0,
+  running: 1,
+  idle: 2,
+  success: 3,
+};
+
+function PeriodAccordion({ period, isOpen, onToggle, routines: rawRoutines, cfg, Icon, onUpdate, onDelete, onStart, onReset, onAdd }: AccordionProps) {
+  const routines = useMemo(
+    () => [...rawRoutines].sort((a, b) => {
+      const diff = STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status];
+      if (diff !== 0) return diff;
+      return (a.cod_rotina || a.name).localeCompare(b.cod_rotina || b.name);
+    }),
+    [rawRoutines],
+  );
+
   const counts = useMemo(() => ({
     total: routines.length,
     idle: routines.filter(r => r.status === 'idle').length,
