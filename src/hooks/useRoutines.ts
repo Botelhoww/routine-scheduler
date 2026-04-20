@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Routine, RoutinePeriod, DateReference, ControlPattern } from '@/types/routine';
 import { CONTROL_PATTERNS } from '@/types/control-pattern';
 
 const STORAGE_KEY = 'banking-routines-v2';
 const AUTO_RESET_MS = 3000;
+const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 min
 
 interface NewRoutineInput {
   name: string;
