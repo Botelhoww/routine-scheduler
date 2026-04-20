@@ -17,10 +17,12 @@ import { cn } from '@/lib/utils';
 
 interface Props {
   routine: Routine;
+  groups: GroupOption[];
   onUpdate: (id: string, updates: Partial<Routine>) => void;
   onDelete: (id: string) => void;
   onStart: (id: string, reason?: string) => void;
   onReset: (id: string) => void;
+  onCreateGroup: (sigla: string, name: string) => void;
 }
 
 const REF_BADGE: Record<Routine['dateReference'], string> = {
