@@ -19,6 +19,7 @@ interface Props {
   onToggleDateRef: (r: DateReference) => void;
   onClearFilters: () => void;
   hasActiveFilters: boolean;
+  rightSlot?: React.ReactNode;
   className?: string;
 }
 
