@@ -32,6 +32,7 @@ export function RoutineFiltersToolbar({
   onToggleDateRef,
   onClearFilters,
   hasActiveFilters,
+  rightSlot,
   className,
 }: Props) {
   const statusCount = statusFilter.size;
