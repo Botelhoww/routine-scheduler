@@ -61,7 +61,9 @@ export function ConfirmReprocessDialog({ open, onOpenChange, routine, processedD
               {dbWriteDate && (
                 <div className="bg-info/10 border border-info/30 rounded-lg p-3 text-xs">
                   <p><strong>Será gravado no banco:</strong> {dbWriteDate}</p>
-                  <p className="text-muted-foreground mt-1">Será gravado D-1 pois a rotina soma +1 automaticamente.</p>
+                  <p className="text-muted-foreground mt-1">
+                    Será gravado D-1 no banco pois a rotina soma +1 automaticamente.
+                  </p>
                 </div>
               )}
 

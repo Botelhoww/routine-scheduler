@@ -2,10 +2,14 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Routine, RoutinePeriod, RoutineStatus, DateReference } from '@/types/routine';
 import { ControlPattern } from '@/types/control-pattern';
 import { RoutineSubgroup } from './RoutineSubgroup';
-import { AddRoutineDrawer } from './AddRoutineDrawer';
+import { RoutineSheet } from './RoutineSheet';
+import { AddGroupDialog } from './AddGroupDialog';
 import { RoutineFiltersToolbar } from './RoutineFiltersToolbar';
 import { RefreshControl } from './RefreshControl';
 import { PaginationControls } from './PaginationControls';
+import { useGroups } from '@/hooks/useGroups';
+import { Button } from '@/components/ui/button';
+import { Plus, FolderPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TAB_STORAGE_KEY = 'bsg-active-period-tab';
@@ -131,6 +135,13 @@ export function RoutinePeriodTabs({
   const [patternFilter, setPatternFilter] = useState<Set<ControlPattern>>(() => new Set());
 
   const [pageByPeriod, setPageByPeriod] = useState<Record<RoutinePeriod, number>>(() => loadPageState());
+
+  // Grupos persistidos + derivados das rotinas
+  const { groups, createGroup, getName } = useGroups(routines);
+
+  // Sheets/dialogs
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [groupDialogOpen, setGroupDialogOpen] = useState(false);
 
   // Detectar adição de rotina para saltar para a última página da aba ativa
   const prevTotalsRef = useRef<Record<RoutinePeriod, number>>({
@@ -349,11 +360,14 @@ export function RoutinePeriodTabs({
               <RoutineSubgroup
                 key={sigla}
                 sigla={sigla}
+                name={getName(sigla)}
                 routines={list}
+                groups={groups}
                 onUpdate={onUpdate}
                 onDelete={onDelete}
                 onStart={onStart}
                 onReset={onReset}
+                onCreateGroup={createGroup}
               />
             ))
           )}
@@ -367,11 +381,45 @@ export function RoutinePeriodTabs({
           />
 
           {/* Rodapé da aba */}
-          <div className="mt-2 flex justify-end">
-            <AddRoutineDrawer period={activeTab} onAdd={onAdd} />
+          <div className="mt-2 flex justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setGroupDialogOpen(true)}
+              className="gap-1.5 text-xs border-dashed"
+            >
+              <FolderPlus className="h-3.5 w-3.5" /> Adicionar Grupo
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSheetOpen(true)}
+              className="gap-1.5 text-xs border-dashed"
+            >
+              <Plus className="h-3.5 w-3.5" /> Adicionar Rotina
+            </Button>
           </div>
         </div>
       </div>
+
+      {/* Sheet unificado em modo criação */}
+      <RoutineSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        period={activeTab}
+        groups={groups}
+        onAdd={onAdd}
+        onUpdate={() => { /* criação não usa onUpdate */ }}
+        onCreateGroup={createGroup}
+      />
+
+      {/* Modal de novo grupo (rodapé) */}
+      <AddGroupDialog
+        open={groupDialogOpen}
+        onOpenChange={setGroupDialogOpen}
+        existingSiglas={groups.map(g => g.sigla)}
+        onCreate={createGroup}
+      />
     </>
   );
 }

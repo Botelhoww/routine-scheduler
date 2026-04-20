@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ConfirmReprocessDialog } from './ConfirmReprocessDialog';
 import { ConfirmDialog } from './ConfirmDialog';
-import { EditRoutineSheet } from './EditRoutineSheet';
+import { RoutineSheet, GroupOption } from './RoutineSheet';
 import { InlineHistory } from './InlineHistory';
 import {
   Play, Pencil, Trash2, History, RotateCcw, FileText,
@@ -17,10 +17,12 @@ import { cn } from '@/lib/utils';
 
 interface Props {
   routine: Routine;
+  groups: GroupOption[];
   onUpdate: (id: string, updates: Partial<Routine>) => void;
   onDelete: (id: string) => void;
   onStart: (id: string, reason?: string) => void;
   onReset: (id: string) => void;
+  onCreateGroup: (sigla: string, name: string) => void;
 }
 
 const REF_BADGE: Record<Routine['dateReference'], string> = {
@@ -36,7 +38,7 @@ const STATUS_BADGE: Record<Routine['status'], { label: string; cls: string; spin
   error:   { label: 'ERRO',        cls: 'bg-[#FEE2E2] text-[#E30613] font-semibold' },
 };
 
-export function RoutineCard({ routine, onUpdate, onDelete, onStart, onReset }: Props) {
+export function RoutineCard({ routine, groups, onUpdate, onDelete, onStart, onReset, onCreateGroup }: Props) {
   const [editing, setEditing] = useState(false);
   const [confirmStart, setConfirmStart] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -239,11 +241,15 @@ export function RoutineCard({ routine, onUpdate, onDelete, onStart, onReset }: P
         onConfirm={(reason) => { onStart(routine.id, reason); setConfirmStart(false); }}
       />
 
-      <EditRoutineSheet
+      <RoutineSheet
         open={editing}
         onOpenChange={setEditing}
+        period={routine.period}
         routine={routine}
-        onSave={onUpdate}
+        groups={groups}
+        onAdd={() => { /* edição não usa onAdd */ }}
+        onUpdate={onUpdate}
+        onCreateGroup={onCreateGroup}
       />
 
       <ConfirmDialog
