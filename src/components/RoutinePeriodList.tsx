@@ -3,6 +3,7 @@ import { Routine, RoutinePeriod, RoutineStatus, DateReference } from '@/types/ro
 import { RoutineRow, RoutineRowHeader } from './RoutineRow';
 import { AddRoutineDrawer } from './AddRoutineDrawer';
 import { RoutineFiltersToolbar } from './RoutineFiltersToolbar';
+import { RefreshControl } from './RefreshControl';
 import { Moon, Sun, Sunrise, ChevronDown, AlertCircle, Loader2, CheckCircle2, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -50,9 +51,12 @@ interface Props {
   onStart: (id: string, reason?: string) => void;
   onReset: (id: string) => void;
   onAdd: (routine: any) => void;
+  onRefresh: () => void | Promise<void>;
+  isRefreshing: boolean;
+  lastUpdated: Date;
 }
 
-export function RoutinePeriodList({ routines, onUpdate, onDelete, onStart, onReset, onAdd }: Props) {
+export function RoutinePeriodList({ routines, onUpdate, onDelete, onStart, onReset, onAdd, onRefresh, isRefreshing, lastUpdated }: Props) {
   const [open, setOpen] = useState<Record<RoutinePeriod, boolean>>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -116,6 +120,13 @@ export function RoutinePeriodList({ routines, onUpdate, onDelete, onStart, onRes
             onToggleDateRef={toggleDateRef}
             onClearFilters={clearFilters}
             hasActiveFilters={hasActiveFilters}
+            rightSlot={
+              <RefreshControl
+                onRefresh={onRefresh}
+                isRefreshing={isRefreshing}
+                lastUpdated={lastUpdated}
+              />
+            }
           />
         </div>
       </div>

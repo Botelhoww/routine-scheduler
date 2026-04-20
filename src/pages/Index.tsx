@@ -3,7 +3,17 @@ import { RoutinePeriodList } from '@/components/RoutinePeriodList';
 import { AppHeader } from '@/components/AppHeader';
 
 export default function Index() {
-  const { routines, addRoutine, updateRoutine, deleteRoutine, startReprocessing, resetStatus } = useRoutines();
+  const {
+    routines,
+    addRoutine,
+    updateRoutine,
+    deleteRoutine,
+    startReprocessing,
+    resetStatus,
+    refresh,
+    isRefreshing,
+    lastUpdated,
+  } = useRoutines();
 
   return (
     <div className="min-h-screen bg-background">
@@ -16,6 +26,9 @@ export default function Index() {
           onStart={startReprocessing}
           onReset={resetStatus}
           onAdd={addRoutine}
+          onRefresh={refresh}
+          isRefreshing={isRefreshing}
+          lastUpdated={lastUpdated}
         />
       </main>
     </div>

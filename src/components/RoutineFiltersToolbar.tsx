@@ -19,6 +19,7 @@ interface Props {
   onToggleDateRef: (r: DateReference) => void;
   onClearFilters: () => void;
   hasActiveFilters: boolean;
+  rightSlot?: React.ReactNode;
   className?: string;
 }
 
@@ -31,6 +32,7 @@ export function RoutineFiltersToolbar({
   onToggleDateRef,
   onClearFilters,
   hasActiveFilters,
+  rightSlot,
   className,
 }: Props) {
   const statusCount = statusFilter.size;
@@ -127,6 +129,8 @@ export function RoutineFiltersToolbar({
         <X className="h-3.5 w-3.5 mr-1" />
         Limpar filtros
       </Button>
+
+      {rightSlot && <div className="ml-auto flex items-center">{rightSlot}</div>}
     </div>
   );
 }

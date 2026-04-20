@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Routine, RoutinePeriod, DateReference, ControlPattern } from '@/types/routine';
 import { CONTROL_PATTERNS } from '@/types/control-pattern';
 
 const STORAGE_KEY = 'banking-routines-v2';
 const AUTO_RESET_MS = 3000;
+const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 min
 
 interface NewRoutineInput {
   name: string;
@@ -115,9 +116,66 @@ export function useRoutines() {
     return mock;
   });
 
+  const [lastUpdated, setLastUpdated] = useState<Date>(() => new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const refreshLockRef = useRef(false);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(routines));
   }, [routines]);
+
+  const refresh = useCallback(async () => {
+    if (refreshLockRef.current) return;
+    refreshLockRef.current = true;
+    setIsRefreshing(true);
+    try {
+      // Simula latência de fetch (~400ms). Em produção: await routineService.getRoutines()
+      await new Promise(res => setTimeout(res, 400));
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as Routine[];
+          setRoutines(parsed);
+        } catch { /* ignore */ }
+      }
+      setLastUpdated(new Date());
+    } finally {
+      setIsRefreshing(false);
+      refreshLockRef.current = false;
+    }
+  }, []);
+
+  // Polling automático com Page Visibility API
+  useEffect(() => {
+    let intervalId: number | undefined;
+
+    const start = () => {
+      if (intervalId !== undefined) return;
+      intervalId = window.setInterval(() => { void refresh(); }, POLL_INTERVAL_MS);
+    };
+    const stop = () => {
+      if (intervalId !== undefined) {
+        window.clearInterval(intervalId);
+        intervalId = undefined;
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        void refresh(); // refresh imediato ao voltar
+        start();
+      } else {
+        stop();
+      }
+    };
+
+    if (document.visibilityState === 'visible') start();
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      stop();
+    };
+  }, [refresh]);
 
   const addRoutine = useCallback((input: NewRoutineInput) => {
     const info = CONTROL_PATTERNS[input.tipo_controle];
@@ -191,7 +249,18 @@ export function useRoutines() {
 
   const getByPeriod = useCallback((period: RoutinePeriod) => routines.filter(r => r.period === period), [routines]);
 
-  return { routines, addRoutine, updateRoutine, deleteRoutine, startReprocessing, resetStatus, getByPeriod };
+  return {
+    routines,
+    addRoutine,
+    updateRoutine,
+    deleteRoutine,
+    startReprocessing,
+    resetStatus,
+    getByPeriod,
+    refresh,
+    isRefreshing,
+    lastUpdated,
+  };
 }
 
 export function calculateProcessingDate(baseDate: string, ref: DateReference): string {
