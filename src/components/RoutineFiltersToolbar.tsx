@@ -129,6 +129,8 @@ export function RoutineFiltersToolbar({
         <X className="h-3.5 w-3.5 mr-1" />
         Limpar filtros
       </Button>
+
+      {rightSlot && <div className="ml-auto flex items-center">{rightSlot}</div>}
     </div>
   );
 }
