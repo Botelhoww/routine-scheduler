@@ -324,13 +324,13 @@ export function RoutinePeriodTabs({
                   aria-selected={isActive}
                   onClick={() => setActiveTab(p)}
                   className={cn(
-                    'h-full px-4 flex items-center gap-2 border-b-2 transition-colors text-[13px]',
+                    'h-full px-4 flex items-center gap-1.5 border-b-2 transition-colors text-[13px]',
                     isActive
                       ? 'border-[#E30613] text-[#1a1a1a] font-medium'
                       : 'border-transparent text-[#666] hover:text-[#1a1a1a]',
                   )}
                 >
-                  <span aria-hidden>{cfg.emoji}</span>
+                  <span aria-hidden className="text-[14px] leading-none">{cfg.emoji}</span>
                   <span>{cfg.label}</span>
                   <span className="text-[11px] text-[#888]">· {cfg.time}</span>
                   <span className="ml-1 inline-flex items-center bg-[#F0F0F0] text-[#666] text-[11px] rounded-full px-2 py-0.5">
