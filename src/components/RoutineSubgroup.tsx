@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Routine } from '@/types/routine';
 import { RoutineCard } from './RoutineCard';
+import { GroupOption } from './RoutineSheet';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -8,13 +9,15 @@ const STORAGE_KEY = 'bsg-subgroup-collapse-state';
 
 interface Props {
   sigla: string;
-  /** Nome descritivo do grupo (por enquanto = sigla) */
+  /** Nome descritivo do grupo */
   name?: string;
   routines: Routine[];
+  groups: GroupOption[];
   onUpdate: (id: string, updates: Partial<Routine>) => void;
   onDelete: (id: string) => void;
   onStart: (id: string, reason?: string) => void;
   onReset: (id: string) => void;
+  onCreateGroup: (sigla: string, name: string) => void;
 }
 
 const STATUS_PRIORITY: Record<Routine['status'], number> = {
