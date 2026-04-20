@@ -254,24 +254,27 @@ function PeriodAccordion({
     <section className="bg-card border border-border rounded-lg overflow-hidden shadow-sm">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between gap-4 px-4 py-3 bg-primary text-primary-foreground hover:bg-primary/95 transition-colors text-left"
+        className="w-full bg-primary text-primary-foreground hover:bg-primary/95 transition-colors text-left"
         aria-expanded={isOpen}
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <Icon className="h-5 w-5 shrink-0" />
-          <div className="flex items-baseline gap-2 min-w-0">
-            <h2 className="font-semibold text-sm">{cfg.title}</h2>
-            <span className="text-xs opacity-70 font-normal">{cfg.time}</span>
+        <div className="flex items-center justify-between gap-4 px-4 py-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Icon className="h-5 w-5 shrink-0" />
+            <div className="flex items-baseline gap-2 min-w-0">
+              <h2 className="font-semibold text-sm">{cfg.title}</h2>
+              <span className="text-xs opacity-70 font-normal">{cfg.time}</span>
+            </div>
+            <Badge className="bg-primary-foreground/15 text-primary-foreground hover:bg-primary-foreground/20 text-xs font-medium border-0">
+              {counts.total} rotina{counts.total !== 1 ? 's' : ''}
+            </Badge>
           </div>
-          <Badge className="bg-primary-foreground/15 text-primary-foreground hover:bg-primary-foreground/20 text-xs font-medium border-0">
-            {counts.total} rotina{counts.total !== 1 ? 's' : ''}
-          </Badge>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <StatusSummary counts={counts} />
-          <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", isOpen && "rotate-180")} />
+          <div className="flex items-center gap-3">
+            <StatusSummary counts={counts} />
+            <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", isOpen && "rotate-180")} />
+          </div>
         </div>
+        {counts.total > 0 && <StatusDistributionBar counts={counts} />}
       </button>
 
       <div
