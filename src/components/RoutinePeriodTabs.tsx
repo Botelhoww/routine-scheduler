@@ -350,7 +350,7 @@ export function RoutinePeriodTabs({
 
       {/* Conteúdo da aba ativa */}
       <div className="pt-[158px]">
-        <div className="px-6 pt-5 pb-6">
+        <div className="px-6 pt-3 pb-6">
           {visibleSubgroups.length === 0 ? (
             <div className="bg-white border border-[#E2E4E8] rounded-[10px] py-10 text-center text-sm text-[#888]">
               Nenhuma rotina neste período com os filtros atuais.

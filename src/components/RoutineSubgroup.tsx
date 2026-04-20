@@ -66,7 +66,7 @@ export function RoutineSubgroup({
   const errorCount = routines.filter(r => r.status === 'error').length;
 
   return (
-    <section className="bg-white border border-[#E2E4E8] rounded-[10px] overflow-hidden mb-3">
+    <section className="bg-white border border-[#E2E4E8] border-t-2 border-t-[#E30613] rounded-[10px] overflow-hidden mb-5">
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
