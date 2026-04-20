@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ConfirmReprocessDialog } from './ConfirmReprocessDialog';
 import { ConfirmDialog } from './ConfirmDialog';
-import { EditRoutineSheet } from './EditRoutineSheet';
+import { RoutineSheet, GroupOption } from './RoutineSheet';
 import { InlineHistory } from './InlineHistory';
 import {
   Play, Pencil, Trash2, History, RotateCcw, FileText,
