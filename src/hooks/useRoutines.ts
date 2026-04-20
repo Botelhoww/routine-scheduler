@@ -226,7 +226,7 @@ export function useRoutines() {
           date: new Date().toLocaleString('pt-BR'),
           status: success ? 'success' as const : 'error' as const,
           duration: `${Math.floor(duration / 1000)}s`,
-          executedBy: 'João Silva',
+          executedBy: 'Vinicius Awada',
           reason: r.reason,
           ...(success ? {} : { errorMessage: 'Falha na conexão com o banco de dados' }),
         };
