@@ -40,8 +40,8 @@ function saveCollapseState(state: Record<string, boolean>) {
 }
 
 export function RoutineSubgroup({
-  sigla, name, routines: rawRoutines,
-  onUpdate, onDelete, onStart, onReset,
+  sigla, name, routines: rawRoutines, groups,
+  onUpdate, onDelete, onStart, onReset, onCreateGroup,
 }: Props) {
   const [open, setOpen] = useState<boolean>(() => {
     const state = loadCollapseState();
@@ -107,10 +107,12 @@ export function RoutineSubgroup({
             <RoutineCard
               key={r.id}
               routine={r}
+              groups={groups}
               onUpdate={onUpdate}
               onDelete={onDelete}
               onStart={onStart}
               onReset={onReset}
+              onCreateGroup={onCreateGroup}
             />
           ))}
         </div>
