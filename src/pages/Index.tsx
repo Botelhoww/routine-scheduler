@@ -1,5 +1,5 @@
 import { useRoutines } from '@/hooks/useRoutines';
-import { RoutinePeriodList } from '@/components/RoutinePeriodList';
+import { RoutinePeriodTabs } from '@/components/RoutinePeriodTabs';
 import { AppHeader } from '@/components/AppHeader';
 
 export default function Index() {
@@ -18,8 +18,8 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="container max-w-[1400px] mx-auto px-4 pb-6">
-        <RoutinePeriodList
+      <main>
+        <RoutinePeriodTabs
           routines={routines}
           onUpdate={updateRoutine}
           onDelete={deleteRoutine}
