@@ -8,6 +8,28 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'bsg-period-accordion-state';
+const FILTERS_STORAGE_KEY = 'bsg-routine-filters-v1';
+
+interface PersistedFilters {
+  searchQuery: string;
+  statusFilter: RoutineStatus[];
+  dateRefFilter: DateReference[];
+}
+
+function loadPersistedFilters(): PersistedFilters {
+  try {
+    const raw = localStorage.getItem(FILTERS_STORAGE_KEY);
+    if (raw) {
+      const p = JSON.parse(raw) as Partial<PersistedFilters>;
+      return {
+        searchQuery: typeof p.searchQuery === 'string' ? p.searchQuery : '',
+        statusFilter: Array.isArray(p.statusFilter) ? p.statusFilter : [],
+        dateRefFilter: Array.isArray(p.dateRefFilter) ? p.dateRefFilter : [],
+      };
+    }
+  } catch { /* ignore */ }
+  return { searchQuery: '', statusFilter: [], dateRefFilter: [] };
+}
 
 const periodConfig: Record<RoutinePeriod, { title: string; time: string; icon: typeof Moon; emoji: string }> = {
   dawn:    { title: 'Madrugada', time: '00h – 06h', icon: Moon,    emoji: '🌙' },
@@ -53,6 +75,8 @@ interface Props {
 }
 
 export function RoutinePeriodList({ routines, onUpdate, onDelete, onStart, onReset, onAdd }: Props) {
+  const persisted = useMemo(() => loadPersistedFilters(), []);
+
   const [open, setOpen] = useState<Record<RoutinePeriod, boolean>>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -62,13 +86,39 @@ export function RoutinePeriodList({ routines, onUpdate, onDelete, onStart, onRes
     return { dawn: cur === 'dawn', morning: cur === 'morning', night: cur === 'night' };
   });
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<Set<RoutineStatus>>(() => new Set());
-  const [dateRefFilter, setDateRefFilter] = useState<Set<DateReference>>(() => new Set());
+  const [searchQuery, setSearchQuery] = useState(persisted.searchQuery);
+  const [statusFilter, setStatusFilter] = useState<Set<RoutineStatus>>(() => new Set(persisted.statusFilter));
+  const [dateRefFilter, setDateRefFilter] = useState<Set<DateReference>>(() => new Set(persisted.dateRefFilter));
+
+  // Auto-abrir accordions de períodos que tenham rotinas em ERRO (apenas uma vez por sessão).
+  const [autoOpenedForErrors, setAutoOpenedForErrors] = useState(false);
+  useEffect(() => {
+    if (autoOpenedForErrors) return;
+    const periodsWithError = new Set(
+      routines.filter(r => r.status === 'error').map(r => r.period),
+    );
+    if (periodsWithError.size === 0) return;
+    setOpen(prev => {
+      const next = { ...prev };
+      periodsWithError.forEach(p => { next[p] = true; });
+      return next;
+    });
+    setAutoOpenedForErrors(true);
+  }, [routines, autoOpenedForErrors]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(open));
   }, [open]);
+
+  // Persistência de filtros
+  useEffect(() => {
+    const payload: PersistedFilters = {
+      searchQuery,
+      statusFilter: Array.from(statusFilter),
+      dateRefFilter: Array.from(dateRefFilter),
+    };
+    localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(payload));
+  }, [searchQuery, statusFilter, dateRefFilter]);
 
   const toggle = (p: RoutinePeriod) => setOpen(s => ({ ...s, [p]: !s[p] }));
 
