@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { useState } from 'react';
 import { Routine } from '@/types/routine';
 import { calculateProcessingDate } from '@/hooks/useRoutines';
 import { getRoutineStartBlockedReason } from '@/lib/routine-eligibility';
@@ -22,7 +22,7 @@ interface Props {
   onReset: (id: string) => void;
 }
 
-function RoutineRowComponent({ routine, onUpdate, onDelete, onStart, onReset }: Props) {
+export function RoutineRow({ routine, onUpdate, onDelete, onStart, onReset }: Props) {
   const [editing, setEditing] = useState(false);
   const [confirmStart, setConfirmStart] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -255,20 +255,6 @@ function RoutineRowComponent({ routine, onUpdate, onDelete, onStart, onReset }: 
     </>
   );
 }
-
-/**
- * Memoized: linha só re-renderiza quando a própria rotina (ou seus callbacks) muda.
- * Evita re-render completo da tabela ao executar/atualizar uma única rotina.
- */
-export const RoutineRow = memo(RoutineRowComponent, (prev, next) => {
-  return (
-    prev.routine === next.routine &&
-    prev.onUpdate === next.onUpdate &&
-    prev.onDelete === next.onDelete &&
-    prev.onStart === next.onStart &&
-    prev.onReset === next.onReset
-  );
-});
 
 /** Cabeçalho da tabela densa — ícone de chevron para alinhar com a área de ações */
 export function RoutineRowHeader() {
