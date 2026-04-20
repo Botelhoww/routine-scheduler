@@ -6,7 +6,8 @@
 
 @layer base {
   :root {
-    --background: 210 17% 97%;
+    /* #F3F4F6 — fundo padrão SG Developer Portal */
+    --background: 220 14% 96%;
     --foreground: 210 50% 10%;
 
     --card: 0 0% 100%;
