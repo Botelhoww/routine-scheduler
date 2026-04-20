@@ -1,6 +1,6 @@
-# Arquitetura — Reprocessamento de Rotinas
-# BSG Société Générale
+# Arquitetura — Reprocessamento de Rotinas · BSG Société Générale
 
+---
 ---
 
 ## Visão Geral
@@ -81,16 +81,11 @@ BEGIN
         FROM tab_controle_reprocessamento_global
         WHERE cod_rotina = @cod_rotina
 
-        IF @@ROWCOUNT = 0
-        BEGIN
-            RAISERROR('Rotina %s não encontrada na tab_controle_reprocessamento_global.', 16, 1, @cod_rotina)
-            RETURN
-        END
-
         IF @dt_referencia IS NOT NULL
             SET @dt_processamento = @dt_referencia
         ELSE
             SET @dt_processamento = DATEADD(DAY, 1, @dt_ultimo_processamento) -- ver dps se realmente fazer d+1
+
 
         UPDATE tab_controle_reprocessamento_global
         SET 
@@ -128,8 +123,9 @@ END
 
 **Observações:**
 - Em caso de `ERRO`, o status **não** volta para `AGUARDANDO` automaticamente
-# 
-# 
+
+---
+
 # Camada 2 — Padrões Legados
 
 ### Padrão A — Flag NULL / Data
@@ -203,6 +199,8 @@ END
 **Rotinas:**
 - Recon BOxBI
 
+---
+---
 ---
 
 ### Padrão E — Controle por produto ativo
