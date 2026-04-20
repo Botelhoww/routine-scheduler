@@ -120,6 +120,13 @@ export function RoutinePeriodList({ routines, onUpdate, onDelete, onStart, onRes
             onToggleDateRef={toggleDateRef}
             onClearFilters={clearFilters}
             hasActiveFilters={hasActiveFilters}
+            rightSlot={
+              <RefreshControl
+                onRefresh={onRefresh}
+                isRefreshing={isRefreshing}
+                lastUpdated={lastUpdated}
+              />
+            }
           />
         </div>
       </div>
