@@ -2,10 +2,14 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Routine, RoutinePeriod, RoutineStatus, DateReference } from '@/types/routine';
 import { ControlPattern } from '@/types/control-pattern';
 import { RoutineSubgroup } from './RoutineSubgroup';
-import { AddRoutineDrawer } from './AddRoutineDrawer';
+import { RoutineSheet } from './RoutineSheet';
+import { AddGroupDialog } from './AddGroupDialog';
 import { RoutineFiltersToolbar } from './RoutineFiltersToolbar';
 import { RefreshControl } from './RefreshControl';
 import { PaginationControls } from './PaginationControls';
+import { useGroups } from '@/hooks/useGroups';
+import { Button } from '@/components/ui/button';
+import { Plus, FolderPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TAB_STORAGE_KEY = 'bsg-active-period-tab';
