@@ -38,7 +38,7 @@ const STATUS_BADGE: Record<Routine['status'], { label: string; cls: string; spin
   error:   { label: 'ERRO',        cls: 'bg-[#FEE2E2] text-[#E30613] font-semibold' },
 };
 
-export function RoutineCard({ routine, onUpdate, onDelete, onStart, onReset }: Props) {
+export function RoutineCard({ routine, groups, onUpdate, onDelete, onStart, onReset, onCreateGroup }: Props) {
   const [editing, setEditing] = useState(false);
   const [confirmStart, setConfirmStart] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -241,11 +241,15 @@ export function RoutineCard({ routine, onUpdate, onDelete, onStart, onReset }: P
         onConfirm={(reason) => { onStart(routine.id, reason); setConfirmStart(false); }}
       />
 
-      <EditRoutineSheet
+      <RoutineSheet
         open={editing}
         onOpenChange={setEditing}
+        period={routine.period}
         routine={routine}
-        onSave={onUpdate}
+        groups={groups}
+        onAdd={() => { /* edição não usa onAdd */ }}
+        onUpdate={onUpdate}
+        onCreateGroup={onCreateGroup}
       />
 
       <ConfirmDialog
