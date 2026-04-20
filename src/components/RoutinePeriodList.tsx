@@ -334,3 +334,38 @@ function StatusSummary({ counts }: { counts: { idle: number; running: number; su
     </div>
   );
 }
+
+/**
+ * Mini-barra horizontal mostrando a distribuição proporcional dos status do período.
+ * Cada segmento usa um token semântico e tem tooltip com a contagem.
+ */
+function StatusDistributionBar({
+  counts,
+}: { counts: { idle: number; running: number; success: number; error: number } }) {
+  const total = counts.idle + counts.running + counts.success + counts.error;
+  if (total === 0) return null;
+
+  const segments: Array<{ key: string; n: number; bg: string; label: string }> = [
+    { key: 'error',   n: counts.error,   bg: 'bg-destructive',    label: 'em erro' },
+    { key: 'running', n: counts.running, bg: 'bg-info',           label: 'em execução' },
+    { key: 'idle',    n: counts.idle,    bg: 'bg-primary-foreground/35', label: 'aguardando' },
+    { key: 'success', n: counts.success, bg: 'bg-success',        label: 'concluído' },
+  ].filter(s => s.n > 0);
+
+  return (
+    <div
+      className="flex h-1 w-full overflow-hidden bg-primary-foreground/10"
+      role="img"
+      aria-label={`Distribuição: ${segments.map(s => `${s.n} ${s.label}`).join(', ')}`}
+    >
+      {segments.map(s => (
+        <span
+          key={s.key}
+          className={cn('h-full transition-all', s.bg)}
+          style={{ width: `${(s.n / total) * 100}%` }}
+          title={`${s.n} ${s.label}`}
+        />
+      ))}
+    </div>
+  );
+}
