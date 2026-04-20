@@ -97,7 +97,7 @@ export function ConfirmReprocessDialog({ open, onOpenChange, routine, processedD
               </div>
 
               <p className="text-xs text-muted-foreground border-t border-border pt-2">
-                Executado por: <strong>João Silva</strong> — {now.toLocaleDateString('pt-BR')} {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                Executado por: <strong>Vinicius Awada</strong> — {now.toLocaleDateString('pt-BR')} {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
           </AlertDialogDescription>
