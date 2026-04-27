@@ -212,22 +212,14 @@ export function RoutineSheet({
         side="right"
         className="w-[460px] sm:max-w-[460px] p-0 flex flex-col gap-0 overflow-hidden"
       >
-        {/* Cabeçalho interno simples (sem SheetHeader duplicado) */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        {/* Cabeçalho interno simples — close X é fornecido pelo SheetContent */}
+        <div className="px-4 pt-4 pb-2 pr-10">
           <SheetTitle className="text-[13px] font-medium text-foreground">
             {isEdit ? 'Editar rotina' : 'Nova rotina'}
           </SheetTitle>
           <SheetDescription className="sr-only">
             {isEdit ? 'Atualize os dados desta rotina.' : 'Cadastre uma nova rotina.'}
           </SheetDescription>
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Fechar"
-          >
-            <X className="h-4 w-4" />
-          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 pb-3 space-y-2.5">
