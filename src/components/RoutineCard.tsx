@@ -126,15 +126,10 @@ export function RoutineCard({
           <TooltipContent className="text-xs font-tech max-w-md break-all">{routine.exePath}</TooltipContent>
         </Tooltip>
 
-        {/* referência + data */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className={cn('font-tech text-[11px] tabular-nums', REF_TONE[routine.dateReference])}>
-              {routine.dateReference}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent className="text-xs font-tech">{processedDate}</TooltipContent>
-        </Tooltip>
+        {/* data */}
+        <span className="font-tech text-[11px] tabular-nums text-muted-foreground">
+          {processedDate}
+        </span>
 
         {/* ações — reveladas no hover */}
         <div
