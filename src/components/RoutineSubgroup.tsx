@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Routine } from '@/types/routine';
 import { RoutineCard } from './RoutineCard';
 import { GroupOption } from './RoutineSheet';
-import { ChevronDown } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'bsg-subgroup-collapse-state';
@@ -64,57 +64,74 @@ export function RoutineSubgroup({
   );
 
   const errorCount = routines.filter(r => r.status === 'error').length;
+  const runningCount = routines.filter(r => r.status === 'running').length;
 
   return (
-    <section className="bg-white border border-[#E2E4E8] border-t-2 border-t-[#E30613] rounded-[10px] overflow-hidden mb-5">
+    <section className="mb-8">
+      {/* Cabeçalho do grupo — discreto, tipo "comentário de seção" */}
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between px-4 py-2.5 bg-[#F8F9FB] border-b border-[#E2E4E8] hover:bg-[#F0F2F5] transition-colors text-left"
+        className="w-full flex items-center gap-2 mb-2 text-left group"
         aria-expanded={open}
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="inline-flex items-center bg-[#E8EDF5] text-[#0A2540] text-[11px] font-semibold rounded px-2 py-0.5">
-            {sigla}
-          </span>
-          <span className="text-[13px] font-medium text-[#1a1a1a] truncate">
-            {name || sigla}
-          </span>
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <span className="text-[12px] text-[#888]">
-            {routines.length} rotina{routines.length !== 1 ? 's' : ''}
-          </span>
-          {errorCount > 0 && (
-            <span className="inline-flex items-center bg-[#FEE2E2] text-[#E30613] text-[11px] rounded px-2 py-0.5">
-              {errorCount} erro{errorCount !== 1 ? 's' : ''}
-            </span>
+        <ChevronRight
+          className={cn(
+            'h-3 w-3 text-muted-foreground/50 transition-transform duration-200 shrink-0',
+            open && 'rotate-90',
           )}
-          <ChevronDown
-            className={cn('h-3 w-3 text-[#aaa] transition-transform duration-200', open && 'rotate-180')}
-          />
-        </div>
+        />
+        <span className="font-tech text-[11px] uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">
+          {sigla}
+        </span>
+        {name && name !== sigla && (
+          <span className="text-[12px] text-muted-foreground/80 truncate">
+            · {name}
+          </span>
+        )}
+        <span className="text-[11px] text-muted-foreground/60 font-tech">
+          ({routines.length})
+        </span>
+
+        {/* Indicadores só quando há atenção devida */}
+        {runningCount > 0 && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-tech text-[hsl(var(--status-running))]">
+            <span className="status-dot status-dot--running" />
+            {runningCount} rodando
+          </span>
+        )}
+        {errorCount > 0 && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-tech text-[hsl(var(--status-error))]">
+            <span className="status-dot status-dot--error" />
+            {errorCount} erro{errorCount !== 1 ? 's' : ''}
+          </span>
+        )}
+
+        {/* linha sutil ocupando o restante */}
+        <span className="flex-1 h-px bg-border ml-2" aria-hidden />
       </button>
 
       <div
         className={cn(
           'grid transition-all duration-200 ease-in-out',
-          open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+          open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
         )}
       >
         <div className="overflow-hidden">
-          {routines.map(r => (
-            <RoutineCard
-              key={r.id}
-              routine={r}
-              groups={groups}
-              onUpdate={onUpdate}
-              onDelete={onDelete}
-              onStart={onStart}
-              onReset={onReset}
-              onCreateGroup={onCreateGroup}
-            />
-          ))}
+          <div className="bg-[hsl(var(--surface))] border border-border rounded-md overflow-hidden">
+            {routines.map(r => (
+              <RoutineCard
+                key={r.id}
+                routine={r}
+                groups={groups}
+                onUpdate={onUpdate}
+                onDelete={onDelete}
+                onStart={onStart}
+                onReset={onReset}
+                onCreateGroup={onCreateGroup}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </section>

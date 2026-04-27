@@ -285,7 +285,7 @@ export function RoutinePeriodTabs({
   return (
     <>
       {/* Barra de filtros (sticky) */}
-      <div className="fixed top-[56px] left-0 right-0 z-40 border-b border-[#E8E8E8] bg-white">
+      <div className="fixed top-[56px] left-0 right-0 z-40 border-b border-border bg-background">
         <div className="px-6">
           <RoutineFiltersToolbar
             searchQuery={searchQuery}
@@ -309,10 +309,10 @@ export function RoutinePeriodTabs({
         </div>
       </div>
 
-      {/* Barra de abas (sticky) */}
-      <div className="fixed top-[110px] left-0 right-0 z-30 bg-white border-b border-[#E8E8E8] h-[48px]">
+      {/* Barra de abas (sticky) — discreta, tipo navegação de editor */}
+      <div className="fixed top-[110px] left-0 right-0 z-30 bg-background border-b border-border h-[44px]">
         <div className="px-6 h-full">
-          <div role="tablist" className="flex items-center h-full gap-1">
+          <div role="tablist" className="flex items-center h-full gap-6">
             {periods.map(p => {
               const cfg = periodConfig[p];
               const c = counts[p];
@@ -324,21 +324,22 @@ export function RoutinePeriodTabs({
                   aria-selected={isActive}
                   onClick={() => setActiveTab(p)}
                   className={cn(
-                    'h-full px-4 flex items-center gap-1.5 border-b-2 transition-colors text-[13px]',
+                    'h-full flex items-center gap-2 border-b-2 transition-colors text-[13px] -mb-px',
                     isActive
-                      ? 'border-[#E30613] text-[#1a1a1a] font-medium'
-                      : 'border-transparent text-[#666] hover:text-[#1a1a1a]',
+                      ? 'border-foreground text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  <span aria-hidden className="text-[14px] leading-none">{cfg.emoji}</span>
+                  <span aria-hidden className="text-[13px] leading-none opacity-80">{cfg.emoji}</span>
                   <span>{cfg.label}</span>
-                  <span className="text-[11px] text-[#888]">· {cfg.time}</span>
-                  <span className="ml-1 inline-flex items-center bg-[#F0F0F0] text-[#666] text-[11px] rounded-full px-2 py-0.5">
-                    {c.total} rotina{c.total !== 1 ? 's' : ''}
+                  <span className="font-tech text-[10px] text-muted-foreground/70">{cfg.time}</span>
+                  <span className="font-tech text-[10px] text-muted-foreground/70">
+                    ({c.total})
                   </span>
                   {c.error > 0 && (
-                    <span className="inline-flex items-center bg-[#FEE2E2] text-[#E30613] text-[11px] rounded-full px-2 py-0.5">
-                      {c.error} erro{c.error !== 1 ? 's' : ''}
+                    <span className="inline-flex items-center gap-1 font-tech text-[10px] text-[hsl(var(--status-error))]">
+                      <span className="status-dot status-dot--error" />
+                      {c.error}
                     </span>
                   )}
                 </button>
@@ -349,11 +350,11 @@ export function RoutinePeriodTabs({
       </div>
 
       {/* Conteúdo da aba ativa */}
-      <div className="pt-[158px]">
-        <div className="px-6 pt-3 pb-6">
+      <div className="pt-[154px]">
+        <div className="px-6 pt-6 pb-10 max-w-[1400px] mx-auto">
           {visibleSubgroups.length === 0 ? (
-            <div className="bg-white border border-[#E2E4E8] rounded-[10px] py-10 text-center text-sm text-[#888]">
-              Nenhuma rotina neste período com os filtros atuais.
+            <div className="border border-dashed border-border rounded-md py-12 text-center text-sm text-muted-foreground font-tech">
+              # nenhuma rotina neste período com os filtros atuais
             </div>
           ) : (
             visibleSubgroups.map(({ sigla, routines: list }) => (
@@ -381,22 +382,22 @@ export function RoutinePeriodTabs({
           />
 
           {/* Rodapé da aba */}
-          <div className="mt-2 flex justify-end gap-2">
+          <div className="mt-6 flex justify-end gap-2">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => setGroupDialogOpen(true)}
-              className="gap-1.5 text-xs border-dashed"
+              className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
             >
-              <FolderPlus className="h-3.5 w-3.5" /> Adicionar Grupo
+              <FolderPlus className="h-3.5 w-3.5" /> novo grupo
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setSheetOpen(true)}
-              className="gap-1.5 text-xs border-dashed"
+              className="gap-1.5 text-xs"
             >
-              <Plus className="h-3.5 w-3.5" /> Adicionar Rotina
+              <Plus className="h-3.5 w-3.5" /> nova rotina
             </Button>
           </div>
         </div>
