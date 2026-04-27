@@ -26,24 +26,16 @@ interface Props {
 }
 
 const STATUS_LABEL: Record<Routine['status'], string> = {
-  idle:    'aguardando',
-  running: 'em execução',
-  success: 'concluído',
-  error:   'erro',
+  idle: 'aguardando', running: 'em execução', success: 'concluído', error: 'erro',
 };
-
 const STATUS_DOT: Record<Routine['status'], string> = {
-  idle:    'status-dot--idle',
-  running: 'status-dot--running',
-  success: 'status-dot--success',
-  error:   'status-dot--error',
+  idle: 'status-dot--idle', running: 'status-dot--running',
+  success: 'status-dot--success', error: 'status-dot--error',
 };
-
-const STATUS_TEXT: Record<Routine['status'], string> = {
-  idle:    'text-muted-foreground',
-  running: 'text-[hsl(var(--status-running))]',
-  success: 'text-muted-foreground',
-  error:   'text-[hsl(var(--status-error))] font-medium',
+const REF_TONE: Record<Routine['dateReference'], string> = {
+  'D-1': 'text-muted-foreground',
+  'D0':  'text-foreground font-medium underline decoration-foreground/30 underline-offset-2',
+  'D+1': 'text-muted-foreground',
 };
 
 export function RoutineCard({
@@ -54,6 +46,7 @@ export function RoutineCard({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [errorDetailOpen, setErrorDetailOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const processedDate = calculateProcessingDate(routine.reprocessDate, routine.dateReference);
   const blockedReason = getRoutineStartBlockedReason(routine);
@@ -64,33 +57,45 @@ export function RoutineCard({
     routine.errorMessage?.trim() ||
     routine.history.find(h => h.status === 'error')?.errorMessage?.trim();
 
+  const isError = routine.status === 'error';
+  const isRunning = routine.status === 'running';
+
   return (
     <div
       className={cn(
-        'group relative grid items-center gap-4 px-5 py-3 text-[13px] transition-colors',
-        'border-b border-border/60 last:border-b-0',
-        // 6 colunas: status / identidade / padrão+banco / executável / referência / ações
-        'grid-cols-[auto_minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,0.9fr)_auto]',
-        'hover:bg-[hsl(var(--surface-muted))]',
-        // realce sutil só quando algo precisa de atenção
-        routine.status === 'running' && 'bg-[hsl(var(--status-running)/0.04)]',
-        routine.status === 'error'   && 'bg-[hsl(var(--status-error)/0.04)]',
+        'group relative border-b border-border/60 last:border-b-0',
+        // barra lateral fina apenas em erro/running
+        isError   && 'border-l-[3px] border-l-[hsl(var(--status-error))] bg-[hsl(var(--status-error)/0.035)]',
+        isRunning && 'border-l-[3px] border-l-[hsl(var(--status-running))] bg-[hsl(var(--status-running)/0.03)]',
+        !isError && !isRunning && 'border-l-[3px] border-l-transparent hover:bg-[hsl(var(--surface-muted))]',
       )}
     >
-      {/* STATUS — pontinho à esquerda */}
-      <div className="flex items-center justify-center w-3">
+      <div
+        onClick={() => setExpanded(v => !v)}
+        className={cn(
+          'grid items-center h-9 px-3 gap-3 text-[12.5px] cursor-pointer select-none',
+          // status / nome+code / padrão / banco / exe / ref / ações
+          'grid-cols-[14px_minmax(0,2.4fr)_42px_minmax(0,1fr)_minmax(0,1.6fr)_88px_auto]',
+        )}
+      >
+        {/* status dot */}
         <Tooltip>
           <TooltipTrigger asChild>
             <span className={cn('status-dot', STATUS_DOT[routine.status])} aria-label={STATUS_LABEL[routine.status]} />
           </TooltipTrigger>
           <TooltipContent className="text-xs capitalize">{STATUS_LABEL[routine.status]}</TooltipContent>
         </Tooltip>
-      </div>
 
-      {/* IDENTIDADE */}
-      <div className="min-w-0">
-        <div className="flex items-baseline gap-2 min-w-0">
-          <span className="text-[14px] text-foreground truncate">{routine.name}</span>
+        {/* nome + código */}
+        <div className="min-w-0 flex items-center gap-2">
+          <span className={cn('truncate', isError ? 'text-foreground font-medium' : 'text-foreground')}>
+            {routine.name}
+          </span>
+          {routine.cod_rotina && (
+            <span className="font-tech text-[11px] text-muted-foreground/70 truncate shrink-0">
+              {routine.cod_rotina}
+            </span>
+          )}
           {routine.reason && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -99,61 +104,66 @@ export function RoutineCard({
               <TooltipContent className="max-w-xs text-xs">{routine.reason}</TooltipContent>
             </Tooltip>
           )}
+          {isError && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[hsl(var(--status-error))] shrink-0">
+              <AlertCircle className="h-3 w-3" /> ERRO
+            </span>
+          )}
         </div>
-        {routine.cod_rotina && (
-          <div className="font-tech text-[11px] text-muted-foreground/80 truncate mt-0.5">
-            {routine.cod_rotina}
-          </div>
-        )}
-      </div>
 
-      {/* PADRÃO + BANCO */}
-      <div className="min-w-0 font-tech text-[11px] leading-tight">
-        <div className="text-muted-foreground">padrão {routine.tipo_controle}</div>
-        <div className="text-muted-foreground/70 truncate">{routine.banco}</div>
-      </div>
-
-      {/* EXECUTÁVEL */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="font-tech text-[11px] text-muted-foreground/80 truncate cursor-default">
-            {routine.exePath}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent className="text-xs font-tech max-w-md break-all">{routine.exePath}</TooltipContent>
-      </Tooltip>
-
-      {/* REFERÊNCIA + DATA */}
-      <div className="min-w-0 font-tech text-[11px] leading-tight">
-        <div className="text-foreground">{routine.dateReference}</div>
-        <div className="text-muted-foreground/70">→ {processedDate}</div>
-      </div>
-
-      {/* AÇÕES + STATUS TEXTUAL */}
-      <div className="flex items-center gap-3 justify-end shrink-0">
-        <span className={cn('text-[11px] tracking-wide hidden md:inline', STATUS_TEXT[routine.status])}>
-          {routine.status === 'error' && <AlertCircle className="inline h-3 w-3 mr-1 -mt-0.5" />}
-          {STATUS_LABEL[routine.status]}
+        {/* padrão */}
+        <span className="font-tech text-[11px] text-muted-foreground tabular-nums">
+          {routine.tipo_controle}
         </span>
 
-        <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
-          {/* Play */}
-          {routine.status !== 'running' && (
+        {/* banco */}
+        <span className="font-tech text-[11px] text-muted-foreground/80 truncate">
+          {routine.banco}
+        </span>
+
+        {/* exe */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="font-tech text-[11px] text-muted-foreground/80 truncate">
+              {routine.exePath}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent className="text-xs font-tech max-w-md break-all">{routine.exePath}</TooltipContent>
+        </Tooltip>
+
+        {/* referência + data */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className={cn('font-tech text-[11px] tabular-nums', REF_TONE[routine.dateReference])}>
+              {routine.dateReference}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent className="text-xs font-tech">{processedDate}</TooltipContent>
+        </Tooltip>
+
+        {/* ações — reveladas no hover */}
+        <div
+          className="flex items-center gap-0.5 justify-end opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* PLAY — ação primária, sempre visível e destacada */}
+          {!isRunning && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
                   <Button
                     size="icon"
-                    variant="ghost"
                     onClick={() => canStart && setConfirmStart(true)}
                     disabled={!canStart}
                     className={cn(
-                      'h-7 w-7',
-                      canStart && 'text-[hsl(var(--status-success))] hover:bg-[hsl(var(--status-success)/0.1)]',
+                      'h-8 w-8 rounded-md',
+                      canStart
+                        ? 'bg-[hsl(var(--status-success))] text-white hover:bg-[hsl(var(--status-success)/0.85)]'
+                        : 'bg-muted text-muted-foreground/50',
                     )}
                     aria-label="Reprocessar"
                   >
-                    <Play className="h-3.5 w-3.5" fill={canStart ? 'currentColor' : 'none'} />
+                    <Play className="h-3.5 w-3.5" fill="currentColor" />
                   </Button>
                 </span>
               </TooltipTrigger>
@@ -161,15 +171,14 @@ export function RoutineCard({
             </Tooltip>
           )}
 
-          {/* Reset (apenas em erro) */}
-          {routine.status === 'error' && (
+          {isError && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  size="icon"
-                  variant="ghost"
+                  size="icon" variant="ghost"
                   onClick={() => onReset(routine.id)}
-                  className="h-7 w-7 text-[hsl(var(--status-error))] hover:bg-[hsl(var(--status-error)/0.1)]"
+                  className="h-8 w-8 text-[hsl(var(--status-error))] hover:bg-[hsl(var(--status-error)/0.1)]"
+                  aria-label="Resetar"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                 </Button>
@@ -178,16 +187,15 @@ export function RoutineCard({
             </Tooltip>
           )}
 
-          {/* Histórico */}
           {routine.history.length > 0 && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  size="icon"
-                  variant="ghost"
+                  size="icon" variant="ghost"
                   onClick={() => setShowHistory(v => !v)}
                   disabled={actionsLocked}
-                  className="h-7 w-7 relative text-muted-foreground hover:text-foreground"
+                  className="h-8 w-8 relative text-muted-foreground hover:text-foreground"
+                  aria-label="Histórico"
                 >
                   <History className="h-3.5 w-3.5" />
                   <span className="absolute -top-0.5 -right-0.5 text-[9px] font-medium bg-foreground text-background rounded-full h-3.5 min-w-3.5 px-1 flex items-center justify-center">
@@ -199,25 +207,21 @@ export function RoutineCard({
             </Tooltip>
           )}
 
-          {/* Editar */}
           <Button
-            size="icon"
-            variant="ghost"
+            size="icon" variant="ghost"
             onClick={() => setEditing(true)}
             disabled={actionsLocked}
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
             aria-label="Editar"
           >
             <Pencil className="h-3.5 w-3.5" />
           </Button>
 
-          {/* Deletar */}
           <Button
-            size="icon"
-            variant="ghost"
+            size="icon" variant="ghost"
             onClick={() => setConfirmDelete(true)}
             disabled={actionsLocked}
-            className="h-7 w-7 text-muted-foreground hover:text-[hsl(var(--status-error))] hover:bg-[hsl(var(--status-error)/0.1)]"
+            className="h-8 w-8 text-muted-foreground hover:text-[hsl(var(--status-error))] hover:bg-[hsl(var(--status-error)/0.1)]"
             aria-label="Excluir"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -225,16 +229,26 @@ export function RoutineCard({
         </div>
       </div>
 
-      {/* Detalhe do erro */}
-      {routine.status === 'error' && errorDetail && (
-        <div className="col-span-full -mx-5 -mb-3 mt-2 bg-[hsl(var(--status-error)/0.06)] border-t border-[hsl(var(--status-error)/0.2)]">
+      {/* Erro: prévia parcial sempre visível, expande pelo collapsible */}
+      {isError && errorDetail && (
+        <div className="border-t border-[hsl(var(--status-error)/0.2)] bg-[hsl(var(--status-error)/0.05)]">
           <Collapsible open={errorDetailOpen} onOpenChange={setErrorDetailOpen}>
-            <CollapsibleTrigger className="flex w-full items-center gap-2 px-5 py-1.5 text-left text-[11px] font-medium text-[hsl(var(--status-error))] hover:bg-[hsl(var(--status-error)/0.08)]">
-              <ChevronDown className={cn('h-3 w-3 shrink-0 transition-transform', errorDetailOpen && 'rotate-180')} />
-              detalhe do erro
-            </CollapsibleTrigger>
+            <div className="flex items-start gap-2 px-3 py-1.5">
+              <CollapsibleTrigger
+                onClick={(e) => e.stopPropagation()}
+                className="shrink-0 mt-0.5 text-[hsl(var(--status-error))] hover:opacity-80"
+              >
+                <ChevronDown className={cn('h-3 w-3 transition-transform', errorDetailOpen && 'rotate-180')} />
+              </CollapsibleTrigger>
+              <p className={cn(
+                'text-[11px] font-tech text-[hsl(var(--status-error))] leading-snug flex-1 min-w-0',
+                !errorDetailOpen && 'truncate',
+              )}>
+                {errorDetail}
+              </p>
+            </div>
             <CollapsibleContent>
-              <div className="px-5 pb-2 pt-1 text-[12px] leading-relaxed text-[hsl(var(--status-error))] whitespace-pre-wrap font-tech">
+              <div className="px-3 pb-2 pl-8 text-[11px] font-tech text-[hsl(var(--status-error))] whitespace-pre-wrap leading-snug">
                 {errorDetail}
               </div>
             </CollapsibleContent>
@@ -244,8 +258,18 @@ export function RoutineCard({
 
       {/* Histórico inline */}
       {showHistory && routine.history.length > 0 && (
-        <div className="col-span-full -mx-5 -mb-3 mt-2 bg-[hsl(var(--surface-muted))] border-t border-border px-5 py-2">
+        <div className="border-t border-border bg-[hsl(var(--surface-muted))] px-3 py-2">
           <InlineHistory history={routine.history} onClose={() => setShowHistory(false)} />
+        </div>
+      )}
+
+      {/* Expansão por clique na linha — detalhes adicionais */}
+      {expanded && !showHistory && (
+        <div className="border-t border-border bg-[hsl(var(--surface-muted))] px-3 py-2 grid grid-cols-4 gap-x-6 gap-y-1 text-[11px] font-tech">
+          <div><span className="text-muted-foreground/70">tabela: </span>{routine.tabela || '—'}</div>
+          <div><span className="text-muted-foreground/70">processada: </span>{processedDate}</div>
+          <div><span className="text-muted-foreground/70">ref: </span>{routine.dateReference}</div>
+          <div><span className="text-muted-foreground/70">grupo: </span>{routine.grupo || 'GERAL'}</div>
         </div>
       )}
 
@@ -256,18 +280,16 @@ export function RoutineCard({
         processedDate={processedDate}
         onConfirm={(reason) => { onStart(routine.id, reason); setConfirmStart(false); }}
       />
-
       <RoutineSheet
         open={editing}
         onOpenChange={setEditing}
         period={routine.period}
         routine={routine}
         groups={groups}
-        onAdd={() => { /* edição não usa onAdd */ }}
+        onAdd={() => {}}
         onUpdate={onUpdate}
         onCreateGroup={onCreateGroup}
       />
-
       <ConfirmDialog
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
