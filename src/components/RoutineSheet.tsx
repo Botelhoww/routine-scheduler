@@ -2,17 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
 import { Routine, DateReference, RoutinePeriod, ControlPattern } from '@/types/routine';
 import { CONTROL_PATTERNS } from '@/types/control-pattern';
-import { calculateProcessingDate } from '@/hooks/useRoutines';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FolderOpen, CalendarIcon, Info, AlertTriangle, FolderPlus } from 'lucide-react';
+import { FolderOpen, CalendarIcon, AlertTriangle, FolderPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -117,7 +115,8 @@ export function RoutineSheet({
       setName('');
       setCodRotina('');
       setExePath('');
-      setDate('');
+      // Padrão: data de hoje
+      setDate(new Date().toISOString().split('T')[0]);
       setDateRef('D0');
       setReason('');
       setTipoControle('F');
@@ -211,47 +210,48 @@ export function RoutineSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-[480px] sm:max-w-[480px] p-0 flex flex-col gap-0 overflow-hidden"
+        className="w-[460px] sm:max-w-[460px] p-0 flex flex-col gap-0 overflow-hidden"
       >
-        <SheetHeader className="px-5 py-4 border-b border-border">
-          <SheetTitle className="text-[15px]">{isEdit ? 'Editar Rotina' : 'Nova Rotina'}</SheetTitle>
-          <SheetDescription className="text-xs">
-            {isEdit
-              ? 'Atualize os dados desta rotina. As mudanças entram em vigor após salvar.'
-              : 'Cadastre uma nova rotina no período selecionado.'}
+        {/* Cabeçalho interno simples — close X é fornecido pelo SheetContent */}
+        <div className="px-4 pt-4 pb-2 pr-10">
+          <SheetTitle className="text-[13px] font-medium text-foreground">
+            {isEdit ? 'Editar rotina' : 'Nova rotina'}
+          </SheetTitle>
+          <SheetDescription className="sr-only">
+            {isEdit ? 'Atualize os dados desta rotina.' : 'Cadastre uma nova rotina.'}
           </SheetDescription>
-        </SheetHeader>
+        </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+        <div className="flex-1 overflow-y-auto px-4 pb-3 space-y-2.5">
           {/* Nome */}
           <div>
-            <Label className="text-xs">Nome da rotina <span className="text-destructive">*</span></Label>
+            <Label className="text-[11px] text-muted-foreground">Nome <span className="text-destructive">*</span></Label>
             <Input
               value={name}
               onChange={e => setName(e.target.value.slice(0, 120))}
               placeholder="Ex: Fechamento de Posições"
-              className="mt-1.5"
+              className="h-8 mt-1 text-[12.5px]"
             />
-            {errors.name && <p className="text-[11px] text-destructive mt-1">{errors.name}</p>}
+            {errors.name && <p className="text-[10.5px] text-destructive mt-0.5">{errors.name}</p>}
           </div>
 
           {/* Código */}
           <div>
-            <Label className="text-xs">Código da rotina <span className="text-destructive">*</span></Label>
+            <Label className="text-[11px] text-muted-foreground">Código <span className="text-destructive">*</span></Label>
             <Input
               value={codRotina}
               onChange={e => setCodRotina(e.target.value.toUpperCase().slice(0, 60))}
               placeholder="PMAD0001_01"
-              className="mt-1.5 font-mono text-sm"
+              className="h-8 mt-1 font-mono text-[12.5px]"
             />
-            {errors.cod_rotina && <p className="text-[11px] text-destructive mt-1">{errors.cod_rotina}</p>}
+            {errors.cod_rotina && <p className="text-[10.5px] text-destructive mt-0.5">{errors.cod_rotina}</p>}
           </div>
 
           {/* Grupo */}
           <div>
-            <Label className="text-xs">Grupo <span className="text-destructive">*</span></Label>
+            <Label className="text-[11px] text-muted-foreground">Grupo <span className="text-destructive">*</span></Label>
             <Select value={grupoSelect} onValueChange={setGrupoSelect}>
-              <SelectTrigger className="mt-1.5">
+              <SelectTrigger className="h-8 mt-1 text-[12.5px]">
                 <SelectValue placeholder="Selecione um grupo" />
               </SelectTrigger>
               <SelectContent>
@@ -268,99 +268,56 @@ export function RoutineSheet({
                 </SelectItem>
               </SelectContent>
             </Select>
-            {errors.grupoSigla && <p className="text-[11px] text-destructive mt-1">{errors.grupoSigla}</p>}
+            {errors.grupoSigla && <p className="text-[10.5px] text-destructive mt-0.5">{errors.grupoSigla}</p>}
 
             {isCreatingNewGroup && (
-              <div className="mt-2 grid grid-cols-[110px_1fr] gap-2">
+              <div className="mt-1.5 grid grid-cols-[100px_1fr] gap-2">
                 <div>
                   <Input
                     value={novoSigla}
                     onChange={e => setNovoSigla(e.target.value.toUpperCase().slice(0, 8))}
                     placeholder="SIGLA"
-                    className="font-mono text-sm uppercase"
+                    className="h-8 font-mono text-[12.5px] uppercase"
                     maxLength={8}
                   />
-                  {errors.novoSigla && <p className="text-[11px] text-destructive mt-1">{errors.novoSigla}</p>}
+                  {errors.novoSigla && <p className="text-[10.5px] text-destructive mt-0.5">{errors.novoSigla}</p>}
                 </div>
                 <div>
                   <Input
                     value={novoNome}
                     onChange={e => setNovoNome(e.target.value.slice(0, 80))}
-                    placeholder="Nome descritivo do grupo"
-                    className="text-sm"
+                    placeholder="Nome do grupo"
+                    className="h-8 text-[12.5px]"
                   />
-                  {errors.novoNome && <p className="text-[11px] text-destructive mt-1">{errors.novoNome}</p>}
+                  {errors.novoNome && <p className="text-[10.5px] text-destructive mt-0.5">{errors.novoNome}</p>}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Caminho do .exe */}
+          {/* Caminho .exe */}
           <div>
-            <Label className="text-xs">Caminho do executável <span className="text-destructive">*</span></Label>
-            <div className="relative mt-1.5">
-              <FolderOpen className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Label className="text-[11px] text-muted-foreground">Executável <span className="text-destructive">*</span></Label>
+            <div className="relative mt-1">
+              <FolderOpen className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 value={exePath}
                 onChange={e => setExePath(e.target.value.slice(0, 260))}
-                className={cn('pl-9 font-mono text-sm', exeInvalid && 'border-destructive')}
+                className={cn('h-8 pl-7 font-mono text-[12.5px]', exeInvalid && 'border-destructive')}
                 placeholder="C:\caminho\rotina.exe"
               />
             </div>
-            {exeInvalid && <p className="text-[11px] text-destructive mt-1">O caminho deve terminar em .exe</p>}
-            {errors.exePath && !exeInvalid && <p className="text-[11px] text-destructive mt-1">{errors.exePath}</p>}
-          </div>
-
-          {/* Referência (radio buttons estilizados) */}
-          <div>
-            <div className="flex items-center gap-1 mb-1.5">
-              <Label className="text-xs">Referência de data <span className="text-destructive">*</span></Label>
-              <Tooltip>
-                <TooltipTrigger><Info className="h-3.5 w-3.5 text-muted-foreground" /></TooltipTrigger>
-                <TooltipContent className="max-w-xs text-xs">
-                  <p><strong>D-1:</strong> Dia útil anterior.</p>
-                  <p><strong>D0:</strong> Data corrente.</p>
-                  <p><strong>D+1:</strong> Próximo dia.</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <div role="radiogroup" className="grid grid-cols-3 gap-2">
-              {(['D-1', 'D0', 'D+1'] as DateReference[]).map(ref => {
-                const active = dateRef === ref;
-                return (
-                  <button
-                    key={ref}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    onClick={() => setDateRef(ref)}
-                    className={cn(
-                      'h-9 rounded-md border text-sm font-mono font-medium transition-colors',
-                      active
-                        ? 'bg-[#0A2540] text-white border-[#0A2540]'
-                        : 'bg-white text-[#444] border-[#E2E4E8] hover:bg-[#F0F2F5]',
-                    )}
-                  >
-                    {ref}
-                  </button>
-                );
-              })}
-            </div>
-            {date && (
-              <p className="text-xs text-muted-foreground mt-2">
-                → Será processado com:{' '}
-                <strong className="text-foreground">{calculateProcessingDate(date, dateRef)}</strong>
-              </p>
-            )}
+            {exeInvalid && <p className="text-[10.5px] text-destructive mt-0.5">O caminho deve terminar em .exe</p>}
+            {errors.exePath && !exeInvalid && <p className="text-[10.5px] text-destructive mt-0.5">{errors.exePath}</p>}
           </div>
 
           {/* Data */}
           <div>
-            <Label className="text-xs">Data de reprocessamento <span className="text-destructive">*</span></Label>
+            <Label className="text-[11px] text-muted-foreground">Data <span className="text-destructive">*</span></Label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left font-normal mt-1.5">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                <Button variant="outline" className="w-full h-8 mt-1 justify-start text-left font-normal text-[12.5px]">
+                  <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                   {date ? format(new Date(date + 'T12:00:00'), 'dd/MM/yyyy') : 'Selecionar data'}
                 </Button>
               </PopoverTrigger>
@@ -375,97 +332,95 @@ export function RoutineSheet({
                 />
               </PopoverContent>
             </Popover>
-            {errors.reprocessDate && <p className="text-[11px] text-destructive mt-1">{errors.reprocessDate}</p>}
+            {errors.reprocessDate && <p className="text-[10.5px] text-destructive mt-0.5">{errors.reprocessDate}</p>}
           </div>
 
           {/* Tipo de controle */}
           <div>
-            <Label className="text-xs">Tipo de controle <span className="text-destructive">*</span></Label>
+            <Label className="text-[11px] text-muted-foreground">Tipo de controle <span className="text-destructive">*</span></Label>
             <Select value={tipoControle} onValueChange={v => setTipoControle(v as ControlPattern)}>
-              <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 mt-1 text-[12.5px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {PATTERNS.map(p => (
                   <SelectItem key={p} value={p}>{CONTROL_PATTERNS[p].label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-muted-foreground mt-1.5">{info.description}</p>
+            <p className="text-[10.5px] text-muted-foreground mt-1 leading-snug">{info.description}</p>
           </div>
 
           {/* Banco / Tabela (read-only) */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-xs">Banco</Label>
-              <Input value={info.banco} readOnly className="mt-1.5 font-mono text-xs bg-muted" />
+              <Label className="text-[11px] text-muted-foreground">Banco</Label>
+              <Input value={info.banco} readOnly className="h-8 mt-1 font-mono text-[11.5px] bg-muted" />
             </div>
             <div>
-              <Label className="text-xs">Tabela de controle</Label>
-              <Input value={info.tabela} readOnly className="mt-1.5 font-mono text-xs bg-muted" />
+              <Label className="text-[11px] text-muted-foreground">Tabela</Label>
+              <Input value={info.tabela} readOnly className="h-8 mt-1 font-mono text-[11.5px] bg-muted" />
             </div>
           </div>
 
-          {/* Padrão E: produto + alerta laranja */}
+          {/* Padrão E: produto + alerta */}
           {info.needsProduct && (
             <div>
-              <Label className="text-xs">Produto a reprocessar <span className="text-destructive">*</span></Label>
+              <Label className="text-[11px] text-muted-foreground">Produto a reprocessar <span className="text-destructive">*</span></Label>
               <Input
                 value={produto}
                 onChange={e => setProduto(e.target.value.slice(0, 120))}
                 placeholder="Ex: SWAP_DI"
-                className="mt-1.5 text-sm"
+                className="h-8 mt-1 text-[12.5px]"
               />
-              {errors.produto && <p className="text-[11px] text-destructive mt-1">{errors.produto}</p>}
-              <div className="flex items-start gap-1.5 mt-2 text-xs bg-warning/10 text-warning-foreground border border-warning/40 rounded p-2">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning mt-0.5" />
-                <span>Lembre-se de restaurar todos os produtos como ativo=1 após a execução.</span>
+              {errors.produto && <p className="text-[10.5px] text-destructive mt-0.5">{errors.produto}</p>}
+              <div className="flex items-start gap-1.5 mt-1.5 text-[11px] bg-warning/10 text-warning-foreground border border-warning/40 rounded p-1.5">
+                <AlertTriangle className="h-3 w-3 shrink-0 text-warning mt-0.5" />
+                <span>Restaure todos os produtos como ativo=1 após a execução.</span>
               </div>
             </div>
           )}
 
-          {/* Padrões A/B/C/D/E: script de preparação */}
+          {/* Script (opcional) */}
           {info.needsScript && (
             <div>
-              <Label className="text-xs">
-                Script de preparação <span className="text-muted-foreground font-normal">(opcional)</span>
+              <Label className="text-[11px] text-muted-foreground">
+                Script <span className="text-muted-foreground/60 font-normal">(opcional)</span>
               </Label>
               <Textarea
                 value={scriptPrep}
                 onChange={e => setScriptPrep(e.target.value.slice(0, 500))}
                 placeholder={`UPDATE ${info.banco}.dbo.${info.tabela} SET ...`}
-                className="mt-1.5 text-xs font-mono min-h-[80px]"
+                className="mt-1 text-[11.5px] font-mono min-h-[60px]"
                 maxLength={500}
               />
-              <p className="text-[11px] text-muted-foreground text-right mt-0.5">{scriptPrep.length}/500</p>
-              {errors.scriptPrep && <p className="text-[11px] text-destructive mt-1">{errors.scriptPrep}</p>}
+              {errors.scriptPrep && <p className="text-[10.5px] text-destructive mt-0.5">{errors.scriptPrep}</p>}
             </div>
           )}
 
           {/* Motivo */}
           <div>
-            <Label className="text-xs">
-              Motivo do reprocessamento <span className="text-muted-foreground font-normal">(opcional)</span>
+            <Label className="text-[11px] text-muted-foreground">
+              Motivo <span className="text-muted-foreground/60 font-normal">(opcional)</span>
             </Label>
             <Textarea
               value={reason}
               onChange={e => setReason(e.target.value.slice(0, 200))}
               placeholder="Descreva o motivo..."
-              className="mt-1.5 text-sm min-h-[60px]"
+              className="mt-1 text-[12.5px] min-h-[44px]"
               maxLength={200}
             />
-            <p className="text-[11px] text-muted-foreground text-right mt-0.5">{reason.length}/200</p>
           </div>
         </div>
 
         {/* Rodapé */}
-        <div className="border-t border-border px-5 py-3 flex items-center justify-end gap-2 bg-card">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+        <div className="border-t border-border px-4 py-2.5 flex items-center justify-end gap-2 bg-card">
+          <Button variant="ghost" size="sm" className="h-7 text-[12px]" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button
             size="sm"
             onClick={handleSave}
             disabled={!validation.ok}
-            className="bg-[#E30613] hover:bg-[#c70512] text-white"
+            className="h-7 text-[12px] bg-[#E30613] hover:bg-[#c70512] text-white"
           >
             Salvar
           </Button>

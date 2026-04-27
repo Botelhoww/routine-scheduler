@@ -32,11 +32,6 @@ const STATUS_DOT: Record<Routine['status'], string> = {
   idle: 'status-dot--idle', running: 'status-dot--running',
   success: 'status-dot--success', error: 'status-dot--error',
 };
-const REF_TONE: Record<Routine['dateReference'], string> = {
-  'D-1': 'text-muted-foreground',
-  'D0':  'text-foreground font-medium underline decoration-foreground/30 underline-offset-2',
-  'D+1': 'text-muted-foreground',
-};
 
 export function RoutineCard({
   routine, groups, onUpdate, onDelete, onStart, onReset, onCreateGroup,
@@ -74,8 +69,8 @@ export function RoutineCard({
         onClick={() => setExpanded(v => !v)}
         className={cn(
           'grid items-center h-9 px-3 gap-3 text-[12.5px] cursor-pointer select-none',
-          // status / nome+code / padrão / banco / exe / ref / ações
-          'grid-cols-[14px_minmax(0,2.4fr)_42px_minmax(0,1fr)_minmax(0,1.6fr)_88px_auto]',
+          // status / nome+code / padrão / banco / exe / data / ações
+          'grid-cols-[14px_minmax(0,2.4fr)_42px_minmax(0,1fr)_minmax(0,1.6fr)_82px_auto]',
         )}
       >
         {/* status dot */}
@@ -131,15 +126,10 @@ export function RoutineCard({
           <TooltipContent className="text-xs font-tech max-w-md break-all">{routine.exePath}</TooltipContent>
         </Tooltip>
 
-        {/* referência + data */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className={cn('font-tech text-[11px] tabular-nums', REF_TONE[routine.dateReference])}>
-              {routine.dateReference}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent className="text-xs font-tech">{processedDate}</TooltipContent>
-        </Tooltip>
+        {/* data */}
+        <span className="font-tech text-[11px] tabular-nums text-muted-foreground">
+          {processedDate}
+        </span>
 
         {/* ações — reveladas no hover */}
         <div
@@ -265,10 +255,9 @@ export function RoutineCard({
 
       {/* Expansão por clique na linha — detalhes adicionais */}
       {expanded && !showHistory && (
-        <div className="border-t border-border bg-[hsl(var(--surface-muted))] px-3 py-2 grid grid-cols-4 gap-x-6 gap-y-1 text-[11px] font-tech">
+        <div className="border-t border-border bg-[hsl(var(--surface-muted))] px-3 py-2 grid grid-cols-3 gap-x-6 gap-y-1 text-[11px] font-tech">
           <div><span className="text-muted-foreground/70">tabela: </span>{routine.tabela_controle || '—'}</div>
-          <div><span className="text-muted-foreground/70">processada: </span>{processedDate}</div>
-          <div><span className="text-muted-foreground/70">ref: </span>{routine.dateReference}</div>
+          <div><span className="text-muted-foreground/70">data: </span>{processedDate}</div>
           <div><span className="text-muted-foreground/70">grupo: </span>{routine.grupo || 'GERAL'}</div>
         </div>
       )}
