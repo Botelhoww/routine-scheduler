@@ -32,11 +32,6 @@ const STATUS_DOT: Record<Routine['status'], string> = {
   idle: 'status-dot--idle', running: 'status-dot--running',
   success: 'status-dot--success', error: 'status-dot--error',
 };
-const REF_TONE: Record<Routine['dateReference'], string> = {
-  'D-1': 'text-muted-foreground',
-  'D0':  'text-foreground font-medium underline decoration-foreground/30 underline-offset-2',
-  'D+1': 'text-muted-foreground',
-};
 
 export function RoutineCard({
   routine, groups, onUpdate, onDelete, onStart, onReset, onCreateGroup,
