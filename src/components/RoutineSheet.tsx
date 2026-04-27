@@ -115,7 +115,8 @@ export function RoutineSheet({
       setName('');
       setCodRotina('');
       setExePath('');
-      setDate('');
+      // Padrão: data de hoje
+      setDate(new Date().toISOString().split('T')[0]);
       setDateRef('D0');
       setReason('');
       setTipoControle('F');
