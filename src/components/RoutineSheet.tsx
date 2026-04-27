@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
-import { Routine, DateReference, RoutinePeriod, ControlPattern } from '@/types/routine';
+import { Routine, RoutinePeriod, ControlPattern } from '@/types/routine';
 import { CONTROL_PATTERNS } from '@/types/control-pattern';
-import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import {
+  Dialog, DialogContent, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,7 +45,6 @@ interface SaveAddPayload {
   name: string;
   exePath: string;
   reprocessDate: string;
-  dateReference: DateReference;
   period: RoutinePeriod;
   reason?: string;
   tipo_controle: ControlPattern;
@@ -56,13 +57,9 @@ interface SaveAddPayload {
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Período atual (relevante apenas em modo criação) */
   period: RoutinePeriod;
-  /** Quando preenchida → modo edição */
   routine?: Routine;
-  /** Grupos disponíveis para seleção */
   groups: GroupOption[];
-  /** Callbacks */
   onAdd: (payload: SaveAddPayload) => void;
   onUpdate: (id: string, updates: Partial<Routine>) => void;
   onCreateGroup: (sigla: string, name: string) => void;
@@ -75,26 +72,21 @@ export function RoutineSheet({
 }: Props) {
   const isEdit = !!routine;
 
-  // ----- form state -----
   const [name, setName] = useState('');
   const [codRotina, setCodRotina] = useState('');
   const [exePath, setExePath] = useState('');
   const [date, setDate] = useState('');
-  const [dateRef, setDateRef] = useState<DateReference>('D0');
   const [reason, setReason] = useState('');
   const [tipoControle, setTipoControle] = useState<ControlPattern>('F');
   const [scriptPrep, setScriptPrep] = useState('');
   const [produto, setProduto] = useState('');
 
-  // grupo: select (sigla) + (se "novo grupo") sigla nova + nome
   const [grupoSelect, setGrupoSelect] = useState<string>('');
   const [novoSigla, setNovoSigla] = useState('');
   const [novoNome, setNovoNome] = useState('');
 
-  // erros locais (form-level)
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // ----- reset/seed quando abre -----
   useEffect(() => {
     if (!open) return;
     setErrors({});
@@ -103,7 +95,6 @@ export function RoutineSheet({
       setCodRotina(routine.cod_rotina ?? '');
       setExePath(routine.exePath);
       setDate(routine.reprocessDate);
-      setDateRef(routine.dateReference);
       setReason(routine.reason ?? '');
       setTipoControle(routine.tipo_controle);
       setScriptPrep(routine.script_preparacao ?? '');
@@ -115,9 +106,7 @@ export function RoutineSheet({
       setName('');
       setCodRotina('');
       setExePath('');
-      // Padrão: data de hoje
       setDate(new Date().toISOString().split('T')[0]);
-      setDateRef('D0');
       setReason('');
       setTipoControle('F');
       setScriptPrep('');
@@ -132,13 +121,10 @@ export function RoutineSheet({
   const info = useMemo(() => CONTROL_PATTERNS[tipoControle], [tipoControle]);
 
   const isCreatingNewGroup = grupoSelect === NEW_GROUP_VALUE;
-
-  /** Sigla efetiva do grupo (depois de eventual criação) */
   const effectiveGrupoSigla = isCreatingNewGroup
     ? novoSigla.trim().toUpperCase()
     : grupoSelect;
 
-  // validação reativa para habilitar botão
   const validation = useMemo(() => {
     const result = baseSchema.safeParse({
       name,
@@ -168,7 +154,6 @@ export function RoutineSheet({
     }
     setErrors({});
 
-    // Cria grupo se necessário
     if (isCreatingNewGroup) {
       onCreateGroup(novoSigla.trim().toUpperCase(), novoNome.trim());
     }
@@ -179,7 +164,7 @@ export function RoutineSheet({
         cod_rotina: codRotina.trim().toUpperCase(),
         exePath: exePath.trim(),
         reprocessDate: date,
-        dateReference: dateRef,
+        dateReference: 'D0',
         reason: reason.trim() || undefined,
         tipo_controle: tipoControle,
         grupo: effectiveGrupoSigla,
@@ -192,7 +177,6 @@ export function RoutineSheet({
         cod_rotina: codRotina.trim().toUpperCase() || undefined,
         exePath: exePath.trim(),
         reprocessDate: date,
-        dateReference: dateRef,
         period,
         reason: reason.trim() || undefined,
         tipo_controle: tipoControle,
@@ -207,44 +191,44 @@ export function RoutineSheet({
   const exeInvalid = exePath.length > 0 && !exePath.toLowerCase().endsWith('.exe');
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-[460px] sm:max-w-[460px] p-0 flex flex-col gap-0 overflow-hidden"
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="max-w-[520px] p-0 gap-0 rounded-md border bg-background shadow-lg overflow-hidden"
       >
-        {/* Cabeçalho interno simples — close X é fornecido pelo SheetContent */}
-        <div className="px-4 pt-4 pb-2 pr-10">
-          <SheetTitle className="text-[13px] font-medium text-foreground">
+        {/* Header */}
+        <div className="px-5 pt-4 pb-3 border-b border-border">
+          <DialogTitle className="text-[13px] font-medium text-foreground">
             {isEdit ? 'Editar rotina' : 'Nova rotina'}
-          </SheetTitle>
-          <SheetDescription className="sr-only">
+          </DialogTitle>
+          <DialogDescription className="sr-only">
             {isEdit ? 'Atualize os dados desta rotina.' : 'Cadastre uma nova rotina.'}
-          </SheetDescription>
+          </DialogDescription>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-3 space-y-2.5">
-          {/* Nome */}
-          <div>
-            <Label className="text-[11px] text-muted-foreground">Nome <span className="text-destructive">*</span></Label>
-            <Input
-              value={name}
-              onChange={e => setName(e.target.value.slice(0, 120))}
-              placeholder="Ex: Fechamento de Posições"
-              className="h-8 mt-1 text-[12.5px]"
-            />
-            {errors.name && <p className="text-[10.5px] text-destructive mt-0.5">{errors.name}</p>}
-          </div>
-
-          {/* Código */}
-          <div>
-            <Label className="text-[11px] text-muted-foreground">Código <span className="text-destructive">*</span></Label>
-            <Input
-              value={codRotina}
-              onChange={e => setCodRotina(e.target.value.toUpperCase().slice(0, 60))}
-              placeholder="PMAD0001_01"
-              className="h-8 mt-1 font-mono text-[12.5px]"
-            />
-            {errors.cod_rotina && <p className="text-[10.5px] text-destructive mt-0.5">{errors.cod_rotina}</p>}
+        {/* Body */}
+        <div className="px-5 py-4 max-h-[70vh] overflow-y-auto space-y-3">
+          {/* Nome + Código */}
+          <div className="grid grid-cols-[1fr_180px] gap-3">
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Nome <span className="text-destructive">*</span></Label>
+              <Input
+                value={name}
+                onChange={e => setName(e.target.value.slice(0, 120))}
+                placeholder="Ex: Fechamento de Posições"
+                className="h-8 mt-1 text-[12.5px]"
+              />
+              {errors.name && <p className="text-[10.5px] text-destructive mt-0.5">{errors.name}</p>}
+            </div>
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Código <span className="text-destructive">*</span></Label>
+              <Input
+                value={codRotina}
+                onChange={e => setCodRotina(e.target.value.toUpperCase().slice(0, 60))}
+                placeholder="PMAD0001_01"
+                className="h-8 mt-1 font-mono text-[12.5px]"
+              />
+              {errors.cod_rotina && <p className="text-[10.5px] text-destructive mt-0.5">{errors.cod_rotina}</p>}
+            </div>
           </div>
 
           {/* Grupo */}
@@ -295,7 +279,7 @@ export function RoutineSheet({
             )}
           </div>
 
-          {/* Caminho .exe */}
+          {/* Executável */}
           <div>
             <Label className="text-[11px] text-muted-foreground">Executável <span className="text-destructive">*</span></Label>
             <div className="relative mt-1">
@@ -311,46 +295,46 @@ export function RoutineSheet({
             {errors.exePath && !exeInvalid && <p className="text-[10.5px] text-destructive mt-0.5">{errors.exePath}</p>}
           </div>
 
-          {/* Data */}
-          <div>
-            <Label className="text-[11px] text-muted-foreground">Data <span className="text-destructive">*</span></Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full h-8 mt-1 justify-start text-left font-normal text-[12.5px]">
-                  <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                  {date ? format(new Date(date + 'T12:00:00'), 'dd/MM/yyyy') : 'Selecionar data'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date ? new Date(date + 'T12:00:00') : undefined}
-                  onSelect={d => d && setDate(d.toISOString().split('T')[0])}
-                  disabled={d => d > new Date()}
-                  locale={ptBR}
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-            {errors.reprocessDate && <p className="text-[10.5px] text-destructive mt-0.5">{errors.reprocessDate}</p>}
+          {/* Data + Tipo de controle */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Data <span className="text-destructive">*</span></Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full h-8 mt-1 justify-start text-left font-normal text-[12.5px]">
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {date ? format(new Date(date + 'T12:00:00'), 'dd/MM/yyyy') : 'Selecionar'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date ? new Date(date + 'T12:00:00') : undefined}
+                    onSelect={d => d && setDate(d.toISOString().split('T')[0])}
+                    disabled={d => d > new Date()}
+                    locale={ptBR}
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+              {errors.reprocessDate && <p className="text-[10.5px] text-destructive mt-0.5">{errors.reprocessDate}</p>}
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Tipo de controle <span className="text-destructive">*</span></Label>
+              <Select value={tipoControle} onValueChange={v => setTipoControle(v as ControlPattern)}>
+                <SelectTrigger className="h-8 mt-1 text-[12.5px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PATTERNS.map(p => (
+                    <SelectItem key={p} value={p}>{CONTROL_PATTERNS[p].label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Tipo de controle */}
-          <div>
-            <Label className="text-[11px] text-muted-foreground">Tipo de controle <span className="text-destructive">*</span></Label>
-            <Select value={tipoControle} onValueChange={v => setTipoControle(v as ControlPattern)}>
-              <SelectTrigger className="h-8 mt-1 text-[12.5px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {PATTERNS.map(p => (
-                  <SelectItem key={p} value={p}>{CONTROL_PATTERNS[p].label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-[10.5px] text-muted-foreground mt-1 leading-snug">{info.description}</p>
-          </div>
-
-          {/* Banco / Tabela (read-only) */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Banco / Tabela */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-[11px] text-muted-foreground">Banco</Label>
               <Input value={info.banco} readOnly className="h-8 mt-1 font-mono text-[11.5px] bg-muted" />
@@ -361,7 +345,7 @@ export function RoutineSheet({
             </div>
           </div>
 
-          {/* Padrão E: produto + alerta */}
+          {/* Padrão E: produto */}
           {info.needsProduct && (
             <div>
               <Label className="text-[11px] text-muted-foreground">Produto a reprocessar <span className="text-destructive">*</span></Label>
@@ -411,8 +395,8 @@ export function RoutineSheet({
           </div>
         </div>
 
-        {/* Rodapé */}
-        <div className="border-t border-border px-4 py-2.5 flex items-center justify-end gap-2 bg-card">
+        {/* Footer */}
+        <div className="border-t border-border px-5 py-2.5 flex items-center justify-end gap-2 bg-card">
           <Button variant="ghost" size="sm" className="h-7 text-[12px]" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
@@ -425,8 +409,8 @@ export function RoutineSheet({
             Salvar
           </Button>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
 
