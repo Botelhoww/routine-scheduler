@@ -63,7 +63,7 @@ export function RoutineSubgroup({
         type="button"
         onClick={() => setOpen(v => !v)}
         aria-expanded={open}
-        className="sticky top-[154px] z-10 w-full h-7 flex items-center gap-2 px-3 bg-[hsl(var(--surface-muted))] border-y border-border text-left hover:bg-muted transition-colors"
+        className="sticky top-[136px] z-10 w-full h-7 flex items-center gap-2 px-3 bg-[hsl(var(--surface-muted))] border-y border-border text-left hover:bg-muted transition-colors"
       >
         <ChevronRight
           className={cn('h-3 w-3 text-muted-foreground/60 shrink-0 transition-transform', open && 'rotate-90')}
