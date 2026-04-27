@@ -69,8 +69,8 @@ export function RoutineCard({
         onClick={() => setExpanded(v => !v)}
         className={cn(
           'grid items-center h-9 px-3 gap-3 text-[12.5px] cursor-pointer select-none',
-          // status / nome+code / padrão / banco / exe / ref / ações
-          'grid-cols-[14px_minmax(0,2.4fr)_42px_minmax(0,1fr)_minmax(0,1.6fr)_88px_auto]',
+          // status / nome+code / padrão / banco / exe / data / ações
+          'grid-cols-[14px_minmax(0,2.4fr)_42px_minmax(0,1fr)_minmax(0,1.6fr)_82px_auto]',
         )}
       >
         {/* status dot */}
