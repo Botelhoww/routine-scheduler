@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Routine, RoutinePeriod, RoutineStatus, DateReference } from '@/types/routine';
+import { Routine, RoutinePeriod, RoutineStatus } from '@/types/routine';
 import { ControlPattern } from '@/types/control-pattern';
 import { RoutineSubgroup } from './RoutineSubgroup';
 import { RoutineSheet } from './RoutineSheet';
@@ -16,10 +16,10 @@ const TAB_STORAGE_KEY = 'bsg-active-period-tab';
 const PAGE_STORAGE_KEY = 'bsg-period-page-state';
 const ROUTINES_PER_PAGE = 10;
 
-const periodConfig: Record<RoutinePeriod, { label: string; time: string; emoji: string }> = {
-  dawn:    { label: 'Madrugada', time: '00h – 06h', emoji: '🌙' },
-  morning: { label: 'Matutino',  time: '06h – 12h', emoji: '☀️' },
-  night:   { label: 'Noturno',   time: '18h – 00h', emoji: '🌆' },
+const periodConfig: Record<RoutinePeriod, { label: string }> = {
+  dawn:    { label: 'Madrugada' },
+  morning: { label: 'Matutino' },
+  night:   { label: 'Noturno' },
 };
 
 const periods: RoutinePeriod[] = ['dawn', 'morning', 'night'];
@@ -35,7 +35,6 @@ function applyRoutineFilters(
   routines: Routine[],
   q: string,
   statusFilter: Set<RoutineStatus>,
-  dateRefFilter: Set<DateReference>,
   patternFilter: Set<ControlPattern>,
 ): Routine[] {
   const needle = q.trim().toLowerCase();
@@ -46,7 +45,6 @@ function applyRoutineFilters(
       if (!code.includes(needle) && !name.includes(needle)) return false;
     }
     if (statusFilter.size > 0 && !statusFilter.has(r.status)) return false;
-    if (dateRefFilter.size > 0 && !dateRefFilter.has(r.dateReference)) return false;
     if (patternFilter.size > 0 && !patternFilter.has(r.tipo_controle)) return false;
     return true;
   });
@@ -76,11 +74,6 @@ interface SubgroupChunk {
   routines: Routine[];
 }
 
-/**
- * Pagina por grupos inteiros: enche a página até atingir ROUTINES_PER_PAGE
- * sem quebrar grupos. Se o primeiro grupo de uma página já ultrapassa o
- * limite, ele entra inteiro mesmo assim (regra: nunca quebrar grupos).
- */
 function paginateByGroups(groups: SubgroupChunk[], perPage: number): SubgroupChunk[][] {
   const pages: SubgroupChunk[][] = [];
   let current: SubgroupChunk[] = [];
@@ -131,19 +124,15 @@ export function RoutinePeriodTabs({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<Set<RoutineStatus>>(() => new Set());
-  const [dateRefFilter, setDateRefFilter] = useState<Set<DateReference>>(() => new Set());
   const [patternFilter, setPatternFilter] = useState<Set<ControlPattern>>(() => new Set());
 
   const [pageByPeriod, setPageByPeriod] = useState<Record<RoutinePeriod, number>>(() => loadPageState());
 
-  // Grupos persistidos + derivados das rotinas
   const { groups, createGroup, getName } = useGroups(routines);
 
-  // Sheets/dialogs
   const [sheetOpen, setSheetOpen] = useState(false);
   const [groupDialogOpen, setGroupDialogOpen] = useState(false);
 
-  // Detectar adição de rotina para saltar para a última página da aba ativa
   const prevTotalsRef = useRef<Record<RoutinePeriod, number>>({
     dawn: 0, morning: 0, night: 0,
   });
@@ -174,15 +163,6 @@ export function RoutinePeriodTabs({
     setPage(activeTab, 1);
   }, [activeTab, setPage]);
 
-  const toggleDateRef = useCallback((r: DateReference) => {
-    setDateRefFilter(prev => {
-      const next = new Set(prev);
-      if (next.has(r)) next.delete(r); else next.add(r);
-      return next;
-    });
-    setPage(activeTab, 1);
-  }, [activeTab, setPage]);
-
   const togglePattern = useCallback((p: ControlPattern) => {
     setPatternFilter(prev => {
       const next = new Set(prev);
@@ -200,18 +180,16 @@ export function RoutinePeriodTabs({
   const hasActiveFilters =
     searchQuery.trim().length > 0 ||
     statusFilter.size > 0 ||
-    dateRefFilter.size > 0 ||
     patternFilter.size > 0;
 
   const clearFilters = useCallback(() => {
     setSearchQuery('');
     setStatusFilter(new Set());
-    setDateRefFilter(new Set());
     setPatternFilter(new Set());
     setPage(activeTab, 1);
   }, [activeTab, setPage]);
 
-  // Contagens por aba (totais reais, sem filtros)
+  // Counts: total e em erro por período
   const counts = useMemo(() => {
     const result: Record<RoutinePeriod, { total: number; error: number }> = {
       dawn:    { total: 0, error: 0 },
@@ -225,16 +203,14 @@ export function RoutinePeriodTabs({
     return result;
   }, [routines]);
 
-  // Rotinas filtradas da aba ativa
   const filteredActiveRoutines = useMemo(
     () => applyRoutineFilters(
       routines.filter(r => r.period === activeTab),
-      searchQuery, statusFilter, dateRefFilter, patternFilter,
+      searchQuery, statusFilter, patternFilter,
     ),
-    [routines, activeTab, searchQuery, statusFilter, dateRefFilter, patternFilter],
+    [routines, activeTab, searchQuery, statusFilter, patternFilter],
   );
 
-  // Agrupar por sigla
   const allSubgroups = useMemo<SubgroupChunk[]>(() => {
     const map = new Map<string, Routine[]>();
     for (const r of filteredActiveRoutines) {
@@ -248,7 +224,6 @@ export function RoutinePeriodTabs({
       .map(([sigla, list]) => ({ sigla, routines: list }));
   }, [filteredActiveRoutines]);
 
-  // Paginação por grupos inteiros
   const pages = useMemo(
     () => paginateByGroups(allSubgroups, ROUTINES_PER_PAGE),
     [allSubgroups],
@@ -258,18 +233,14 @@ export function RoutinePeriodTabs({
   const currentPage = Math.min(Math.max(1, rawCurrent), totalPages);
   const visibleSubgroups = pages[currentPage - 1] ?? [];
 
-  // Se a página recortada saiu do intervalo (filtros mudaram, etc), ajustar.
   useEffect(() => {
     if (rawCurrent !== currentPage) setPage(activeTab, currentPage);
   }, [rawCurrent, currentPage, activeTab, setPage]);
 
-  // Saltar para última página quando uma rotina é adicionada na aba ativa
   useEffect(() => {
     const prev = prevTotalsRef.current[activeTab];
     const now = periodTotals[activeTab];
     if (now > prev && prev !== 0) {
-      // adição detectada — vai para a última página dos grupos atuais
-      // Recalcula com base nos grupos atuais (sem filtros não importa: o efeito imediato é ir para a última).
       setPageByPeriod(prevState => ({ ...prevState, [activeTab]: totalPages }));
     }
     prevTotalsRef.current = { ...periodTotals };
@@ -279,40 +250,31 @@ export function RoutinePeriodTabs({
   const totalFilteredCount = filteredActiveRoutines.length;
 
   const summary = totalFilteredCount > 0
-    ? `${visibleRoutineCount} de ${totalFilteredCount} rotina${totalFilteredCount !== 1 ? 's' : ''}`
+    ? `${visibleRoutineCount} de ${totalFilteredCount}`
     : undefined;
 
   return (
     <>
-      {/* Barra de filtros (sticky) */}
-      <div className="fixed top-[56px] left-0 right-0 z-40 border-b border-border bg-background">
-        <div className="px-6">
+      {/* Barra única e densa: filtros + abas de período + refresh */}
+      <div className="fixed top-[56px] left-0 right-0 z-40 bg-background border-b border-border">
+        <div className="px-3 h-9 flex items-center gap-3">
+          {/* Filtros à esquerda */}
           <RoutineFiltersToolbar
             searchQuery={searchQuery}
             onSearchChange={handleSearchChange}
             statusFilter={statusFilter}
             onToggleStatus={toggleStatus}
-            dateRefFilter={dateRefFilter}
-            onToggleDateRef={toggleDateRef}
             patternFilter={patternFilter}
             onTogglePattern={togglePattern}
             onClearFilters={clearFilters}
             hasActiveFilters={hasActiveFilters}
-            rightSlot={
-              <RefreshControl
-                onRefresh={onRefresh}
-                isRefreshing={isRefreshing}
-                lastUpdated={lastUpdated}
-              />
-            }
           />
-        </div>
-      </div>
 
-      {/* Segmented control compacto */}
-      <div className="fixed top-[100px] left-0 right-0 z-30 bg-background border-b border-border h-9">
-        <div className="px-3 h-full flex items-center justify-between gap-3">
-          <div role="tablist" className="inline-flex h-7 rounded-md border border-border bg-[hsl(var(--surface-muted))] p-0.5">
+          {/* Separador */}
+          <span className="h-4 w-px bg-border" aria-hidden />
+
+          {/* Abas de período: texto inline, sem fundo */}
+          <div role="tablist" className="inline-flex items-center gap-3">
             {periods.map(p => {
               const cfg = periodConfig[p];
               const c = counts[p];
@@ -324,40 +286,48 @@ export function RoutinePeriodTabs({
                   aria-selected={isActive}
                   onClick={() => setActiveTab(p)}
                   className={cn(
-                    'h-full px-2.5 inline-flex items-center gap-1.5 rounded text-[12px] transition-colors',
+                    'inline-flex items-baseline gap-1 text-[12px] py-1 border-b-[1.5px] transition-colors',
                     isActive
-                      ? 'bg-foreground text-background shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground',
+                      ? 'border-foreground text-foreground font-medium'
+                      : 'border-transparent text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  <span aria-hidden className="text-[11px] leading-none opacity-90">{cfg.emoji}</span>
                   <span>{cfg.label}</span>
-                  <span className={cn('font-tech text-[10px] tabular-nums', isActive ? 'opacity-70' : 'opacity-60')}>
+                  <span className={cn(
+                    'font-tech text-[11px] tabular-nums',
+                    isActive ? 'opacity-80' : 'opacity-60',
+                  )}>
                     {c.total}
+                    {c.error > 0 && (
+                      <>
+                        <span className="opacity-50">/</span>
+                        <span className="text-[hsl(var(--status-error))] font-medium">{c.error}</span>
+                      </>
+                    )}
                   </span>
-                  {c.error > 0 && (
-                    <span className={cn(
-                      'inline-flex items-center gap-1 font-tech text-[10px] font-medium tabular-nums',
-                      isActive ? 'text-[hsl(var(--status-error)/0.95)]' : 'text-[hsl(var(--status-error))]',
-                    )}>
-                      <span className="status-dot status-dot--error" />{c.error}
-                    </span>
-                  )}
                 </button>
               );
             })}
           </div>
 
-          {summary && (
-            <span className="font-tech text-[10px] text-muted-foreground/80 tabular-nums">
-              {summary}
-            </span>
-          )}
+          {/* Direita: resumo + refresh */}
+          <div className="ml-auto flex items-center gap-3">
+            {summary && (
+              <span className="font-tech text-[11px] text-muted-foreground/80 tabular-nums">
+                {summary}
+              </span>
+            )}
+            <RefreshControl
+              onRefresh={onRefresh}
+              isRefreshing={isRefreshing}
+              lastUpdated={lastUpdated}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Conteúdo da aba ativa */}
-      <div className="pt-[136px]">
+      {/* Conteúdo da aba ativa — começa imediatamente abaixo da barra única */}
+      <div className="pt-[92px]">
         <div className="px-3 pt-2 pb-8">
           {visibleSubgroups.length === 0 ? (
             <div className="border border-dashed border-border rounded-md py-10 text-center text-[12px] text-muted-foreground font-tech">
@@ -406,7 +376,6 @@ export function RoutinePeriodTabs({
         </div>
       </div>
 
-      {/* Sheet unificado em modo criação */}
       <RoutineSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
@@ -417,7 +386,6 @@ export function RoutinePeriodTabs({
         onCreateGroup={createGroup}
       />
 
-      {/* Modal de novo grupo (rodapé) */}
       <AddGroupDialog
         open={groupDialogOpen}
         onOpenChange={setGroupDialogOpen}
