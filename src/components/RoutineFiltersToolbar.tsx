@@ -48,7 +48,7 @@ export function RoutineFiltersToolbar({
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-2 md:gap-3 py-2 px-4 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80',
+        'flex flex-wrap items-center gap-2 h-11 px-2 border-b border-border bg-background',
         className,
       )}
     >
