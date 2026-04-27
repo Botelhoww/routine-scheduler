@@ -214,9 +214,12 @@ export function RoutineSheet({
       >
         {/* Cabeçalho interno simples (sem SheetHeader duplicado) */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <h2 className="text-[13px] font-medium text-foreground">
+          <SheetTitle className="text-[13px] font-medium text-foreground">
             {isEdit ? 'Editar rotina' : 'Nova rotina'}
-          </h2>
+          </SheetTitle>
+          <SheetDescription className="sr-only">
+            {isEdit ? 'Atualize os dados desta rotina.' : 'Cadastre uma nova rotina.'}
+          </SheetDescription>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
