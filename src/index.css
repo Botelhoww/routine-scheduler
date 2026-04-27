@@ -1,59 +1,74 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Terminal calmo — paleta sóbria, neutra, quase monocromática.
+ * Cor só aparece quando algo precisa de atenção (erro, running).
+ * Tipografia mono para metadados técnicos (códigos, paths, banco).
+ */
+
 @layer base {
   :root {
-    /* #F3F4F6 — fundo padrão SG Developer Portal */
-    --background: 220 14% 96%;
-    --foreground: 210 50% 10%;
+    /* Fundo geral: branco quase puro com leve toque cinza */
+    --background: 0 0% 99%;
+    --foreground: 220 13% 13%;       /* #1F2328 */
+
+    --surface: 0 0% 100%;             /* cards / superfícies */
+    --surface-muted: 220 14% 97%;     /* hover discreto */
 
     --card: 0 0% 100%;
-    --card-foreground: 210 50% 10%;
+    --card-foreground: 220 13% 13%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 50% 10%;
+    --popover-foreground: 220 13% 13%;
 
-    --primary: 210 80% 15%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 220 13% 13%;
+    --primary-foreground: 0 0% 99%;
 
-    --secondary: 210 20% 93%;
-    --secondary-foreground: 210 50% 10%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 13% 13%;
 
-    --muted: 210 15% 94%;
-    --muted-foreground: 210 10% 45%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;   /* #6B7280 — metadados secundários */
 
-    --accent: 210 20% 93%;
-    --accent-foreground: 210 50% 10%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 220 13% 13%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
+    /* Status — usados apenas como pontinho/realce, nunca como fundo dominante */
+    --status-idle: 220 9% 65%;        /* cinza neutro */
+    --status-running: 210 90% 56%;    /* azul */
+    --status-success: 142 55% 42%;    /* verde sóbrio */
+    --status-error: 354 78% 47%;      /* vermelho SG #E30613 */
 
-    --success: 142 60% 38%;
-    --success-foreground: 0 0% 98%;
+    --destructive: 354 78% 47%;
+    --destructive-foreground: 0 0% 99%;
 
-    --info: 210 80% 45%;
-    --info-foreground: 0 0% 98%;
+    --success: 142 55% 42%;
+    --success-foreground: 0 0% 99%;
 
-    --warning: 45 93% 47%;
+    --info: 210 90% 56%;
+    --info-foreground: 0 0% 99%;
+
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 10%;
 
-    --border: 214 20% 88%;
-    --input: 214 20% 88%;
-    --ring: 210 80% 15%;
+    --border: 220 13% 91%;            /* #E5E7EB — divisórias finas */
+    --input: 220 13% 91%;
+    --ring: 220 13% 30%;
 
-    --radius: 0.5rem;
+    --radius: 0.375rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-background: 0 0% 99%;
+    --sidebar-foreground: 220 13% 25%;
+    --sidebar-primary: 220 13% 13%;
+    --sidebar-primary-foreground: 0 0% 99%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 220 13% 13%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 220 13% 30%;
   }
 }
 
@@ -63,6 +78,35 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Utility: tipografia mono para campos técnicos */
+  .font-tech {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-feature-settings: 'calt' 0;
+  }
+}
+
+@layer components {
+  /* Pontinho de status — base do "Terminal calmo" */
+  .status-dot {
+    @apply inline-block h-2 w-2 rounded-full shrink-0;
+  }
+  .status-dot--idle    { background-color: hsl(var(--status-idle)); }
+  .status-dot--success { background-color: hsl(var(--status-success)); }
+  .status-dot--error   { background-color: hsl(var(--status-error)); }
+  .status-dot--running {
+    background-color: hsl(var(--status-running));
+    box-shadow: 0 0 0 0 hsl(var(--status-running) / 0.6);
+    animation: pulse-dot 1.6s ease-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%   { box-shadow: 0 0 0 0 hsl(var(--status-running) / 0.55); }
+    70%  { box-shadow: 0 0 0 6px hsl(var(--status-running) / 0); }
+    100% { box-shadow: 0 0 0 0 hsl(var(--status-running) / 0); }
   }
 }
