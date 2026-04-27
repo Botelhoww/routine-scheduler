@@ -357,10 +357,10 @@ export function RoutinePeriodTabs({
       </div>
 
       {/* Conteúdo da aba ativa */}
-      <div className="pt-[154px]">
-        <div className="px-6 pt-6 pb-10 max-w-[1400px] mx-auto">
+      <div className="pt-[136px]">
+        <div className="px-3 pt-2 pb-8">
           {visibleSubgroups.length === 0 ? (
-            <div className="border border-dashed border-border rounded-md py-12 text-center text-sm text-muted-foreground font-tech">
+            <div className="border border-dashed border-border rounded-md py-10 text-center text-[12px] text-muted-foreground font-tech">
               # nenhuma rotina neste período com os filtros atuais
             </div>
           ) : (
@@ -380,7 +380,6 @@ export function RoutinePeriodTabs({
             ))
           )}
 
-          {/* Paginação */}
           <PaginationControls
             currentPage={currentPage}
             totalPages={totalPages}
@@ -388,23 +387,20 @@ export function RoutinePeriodTabs({
             summary={summary}
           />
 
-          {/* Rodapé da aba */}
-          <div className="mt-6 flex justify-end gap-2">
+          <div className="mt-4 flex justify-end gap-1">
             <Button
-              variant="ghost"
-              size="sm"
+              variant="ghost" size="sm"
               onClick={() => setGroupDialogOpen(true)}
-              className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+              className="h-7 gap-1.5 text-[11px] text-muted-foreground hover:text-foreground"
             >
-              <FolderPlus className="h-3.5 w-3.5" /> novo grupo
+              <FolderPlus className="h-3 w-3" /> novo grupo
             </Button>
             <Button
-              variant="outline"
-              size="sm"
+              variant="outline" size="sm"
               onClick={() => setSheetOpen(true)}
-              className="gap-1.5 text-xs"
+              className="h-7 gap-1.5 text-[11px]"
             >
-              <Plus className="h-3.5 w-3.5" /> nova rotina
+              <Plus className="h-3 w-3" /> nova rotina
             </Button>
           </div>
         </div>
