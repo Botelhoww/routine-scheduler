@@ -382,22 +382,22 @@ export function RoutinePeriodTabs({
           />
 
           {/* Rodapé da aba */}
-          <div className="mt-2 flex justify-end gap-2">
+          <div className="mt-6 flex justify-end gap-2">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => setGroupDialogOpen(true)}
-              className="gap-1.5 text-xs border-dashed"
+              className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
             >
-              <FolderPlus className="h-3.5 w-3.5" /> Adicionar Grupo
+              <FolderPlus className="h-3.5 w-3.5" /> novo grupo
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setSheetOpen(true)}
-              className="gap-1.5 text-xs border-dashed"
+              className="gap-1.5 text-xs"
             >
-              <Plus className="h-3.5 w-3.5" /> Adicionar Rotina
+              <Plus className="h-3.5 w-3.5" /> nova rotina
             </Button>
           </div>
         </div>
