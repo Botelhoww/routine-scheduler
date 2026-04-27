@@ -9,7 +9,6 @@ const STORAGE_KEY = 'bsg-subgroup-collapse-state';
 
 interface Props {
   sigla: string;
-  /** Nome descritivo do grupo */
   name?: string;
   routines: Routine[];
   groups: GroupOption[];
@@ -21,20 +20,14 @@ interface Props {
 }
 
 const STATUS_PRIORITY: Record<Routine['status'], number> = {
-  error: 0,
-  running: 1,
-  idle: 2,
-  success: 3,
+  error: 0, running: 1, idle: 2, success: 3,
 };
 
 function loadCollapseState(): Record<string, boolean> {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
+  try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) return JSON.parse(raw); }
+  catch { /* ignore */ }
   return {};
 }
-
 function saveCollapseState(state: Record<string, boolean>) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* ignore */ }
 }
@@ -43,10 +36,7 @@ export function RoutineSubgroup({
   sigla, name, routines: rawRoutines, groups,
   onUpdate, onDelete, onStart, onReset, onCreateGroup,
 }: Props) {
-  const [open, setOpen] = useState<boolean>(() => {
-    const state = loadCollapseState();
-    return state[sigla] ?? true;
-  });
+  const [open, setOpen] = useState<boolean>(() => loadCollapseState()[sigla] ?? true);
 
   useEffect(() => {
     const state = loadCollapseState();
@@ -67,73 +57,55 @@ export function RoutineSubgroup({
   const runningCount = routines.filter(r => r.status === 'running').length;
 
   return (
-    <section className="mb-8">
-      {/* Cabeçalho do grupo — discreto, tipo "comentário de seção" */}
+    <section className="mb-3">
+      {/* GroupHeader compacto, sticky, fundo levemente cinza */}
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center gap-2 mb-2 text-left group"
         aria-expanded={open}
+        className="sticky top-[136px] z-10 w-full h-7 flex items-center gap-2 px-3 bg-[hsl(var(--surface-muted))] border-y border-border text-left hover:bg-muted transition-colors"
       >
         <ChevronRight
-          className={cn(
-            'h-3 w-3 text-muted-foreground/50 transition-transform duration-200 shrink-0',
-            open && 'rotate-90',
-          )}
+          className={cn('h-3 w-3 text-muted-foreground/60 shrink-0 transition-transform', open && 'rotate-90')}
         />
-        <span className="font-tech text-[11px] uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">
+        <span className="font-tech text-[11px] font-medium uppercase tracking-wider text-foreground">
           {sigla}
         </span>
         {name && name !== sigla && (
-          <span className="text-[12px] text-muted-foreground/80 truncate">
-            · {name}
-          </span>
+          <span className="text-[11px] text-muted-foreground truncate">· {name}</span>
         )}
-        <span className="text-[11px] text-muted-foreground/60 font-tech">
-          ({routines.length})
-        </span>
+        <span className="font-tech text-[10px] text-muted-foreground/70">({routines.length})</span>
 
-        {/* Indicadores só quando há atenção devida */}
+        <span className="flex-1" aria-hidden />
+
         {runningCount > 0 && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-tech text-[hsl(var(--status-running))]">
-            <span className="status-dot status-dot--running" />
-            {runningCount} rodando
+          <span className="inline-flex items-center gap-1 font-tech text-[10px] text-[hsl(var(--status-running))]">
+            <span className="status-dot status-dot--running" />{runningCount}
           </span>
         )}
         {errorCount > 0 && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-tech text-[hsl(var(--status-error))]">
-            <span className="status-dot status-dot--error" />
-            {errorCount} erro{errorCount !== 1 ? 's' : ''}
+          <span className="inline-flex items-center gap-1 font-tech text-[10px] font-medium text-[hsl(var(--status-error))]">
+            <span className="status-dot status-dot--error" />{errorCount}
           </span>
         )}
-
-        {/* linha sutil ocupando o restante */}
-        <span className="flex-1 h-px bg-border ml-2" aria-hidden />
       </button>
 
-      <div
-        className={cn(
-          'grid transition-all duration-200 ease-in-out',
-          open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
-        )}
-      >
-        <div className="overflow-hidden">
-          <div className="bg-[hsl(var(--surface))] border border-border rounded-md overflow-hidden">
-            {routines.map(r => (
-              <RoutineCard
-                key={r.id}
-                routine={r}
-                groups={groups}
-                onUpdate={onUpdate}
-                onDelete={onDelete}
-                onStart={onStart}
-                onReset={onReset}
-                onCreateGroup={onCreateGroup}
-              />
-            ))}
-          </div>
+      {open && (
+        <div className="border-x border-b border-border bg-[hsl(var(--surface))]">
+          {routines.map(r => (
+            <RoutineCard
+              key={r.id}
+              routine={r}
+              groups={groups}
+              onUpdate={onUpdate}
+              onDelete={onDelete}
+              onStart={onStart}
+              onReset={onReset}
+              onCreateGroup={onCreateGroup}
+            />
+          ))}
         </div>
-      </div>
+      )}
     </section>
   );
 }

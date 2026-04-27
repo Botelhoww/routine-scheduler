@@ -309,10 +309,10 @@ export function RoutinePeriodTabs({
         </div>
       </div>
 
-      {/* Barra de abas (sticky) — discreta, tipo navegação de editor */}
-      <div className="fixed top-[110px] left-0 right-0 z-30 bg-background border-b border-border h-[44px]">
-        <div className="px-6 h-full">
-          <div role="tablist" className="flex items-center h-full gap-6">
+      {/* Segmented control compacto */}
+      <div className="fixed top-[100px] left-0 right-0 z-30 bg-background border-b border-border h-9">
+        <div className="px-3 h-full flex items-center justify-between gap-3">
+          <div role="tablist" className="inline-flex h-7 rounded-md border border-border bg-[hsl(var(--surface-muted))] p-0.5">
             {periods.map(p => {
               const cfg = periodConfig[p];
               const c = counts[p];
@@ -324,36 +324,43 @@ export function RoutinePeriodTabs({
                   aria-selected={isActive}
                   onClick={() => setActiveTab(p)}
                   className={cn(
-                    'h-full flex items-center gap-2 border-b-2 transition-colors text-[13px] -mb-px',
+                    'h-full px-2.5 inline-flex items-center gap-1.5 rounded text-[12px] transition-colors',
                     isActive
-                      ? 'border-foreground text-foreground'
-                      : 'border-transparent text-muted-foreground hover:text-foreground',
+                      ? 'bg-foreground text-background shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  <span aria-hidden className="text-[13px] leading-none opacity-80">{cfg.emoji}</span>
+                  <span aria-hidden className="text-[11px] leading-none opacity-90">{cfg.emoji}</span>
                   <span>{cfg.label}</span>
-                  <span className="font-tech text-[10px] text-muted-foreground/70">{cfg.time}</span>
-                  <span className="font-tech text-[10px] text-muted-foreground/70">
-                    ({c.total})
+                  <span className={cn('font-tech text-[10px] tabular-nums', isActive ? 'opacity-70' : 'opacity-60')}>
+                    {c.total}
                   </span>
                   {c.error > 0 && (
-                    <span className="inline-flex items-center gap-1 font-tech text-[10px] text-[hsl(var(--status-error))]">
-                      <span className="status-dot status-dot--error" />
-                      {c.error}
+                    <span className={cn(
+                      'inline-flex items-center gap-1 font-tech text-[10px] font-medium tabular-nums',
+                      isActive ? 'text-[hsl(var(--status-error)/0.95)]' : 'text-[hsl(var(--status-error))]',
+                    )}>
+                      <span className="status-dot status-dot--error" />{c.error}
                     </span>
                   )}
                 </button>
               );
             })}
           </div>
+
+          {summary && (
+            <span className="font-tech text-[10px] text-muted-foreground/80 tabular-nums">
+              {summary}
+            </span>
+          )}
         </div>
       </div>
 
       {/* Conteúdo da aba ativa */}
-      <div className="pt-[154px]">
-        <div className="px-6 pt-6 pb-10 max-w-[1400px] mx-auto">
+      <div className="pt-[136px]">
+        <div className="px-3 pt-2 pb-8">
           {visibleSubgroups.length === 0 ? (
-            <div className="border border-dashed border-border rounded-md py-12 text-center text-sm text-muted-foreground font-tech">
+            <div className="border border-dashed border-border rounded-md py-10 text-center text-[12px] text-muted-foreground font-tech">
               # nenhuma rotina neste período com os filtros atuais
             </div>
           ) : (
@@ -373,7 +380,6 @@ export function RoutinePeriodTabs({
             ))
           )}
 
-          {/* Paginação */}
           <PaginationControls
             currentPage={currentPage}
             totalPages={totalPages}
@@ -381,23 +387,20 @@ export function RoutinePeriodTabs({
             summary={summary}
           />
 
-          {/* Rodapé da aba */}
-          <div className="mt-6 flex justify-end gap-2">
+          <div className="mt-4 flex justify-end gap-1">
             <Button
-              variant="ghost"
-              size="sm"
+              variant="ghost" size="sm"
               onClick={() => setGroupDialogOpen(true)}
-              className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+              className="h-7 gap-1.5 text-[11px] text-muted-foreground hover:text-foreground"
             >
-              <FolderPlus className="h-3.5 w-3.5" /> novo grupo
+              <FolderPlus className="h-3 w-3" /> novo grupo
             </Button>
             <Button
-              variant="outline"
-              size="sm"
+              variant="outline" size="sm"
               onClick={() => setSheetOpen(true)}
-              className="gap-1.5 text-xs"
+              className="h-7 gap-1.5 text-[11px]"
             >
-              <Plus className="h-3.5 w-3.5" /> nova rotina
+              <Plus className="h-3 w-3" /> nova rotina
             </Button>
           </div>
         </div>
