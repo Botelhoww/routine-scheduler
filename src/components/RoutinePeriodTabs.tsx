@@ -309,10 +309,10 @@ export function RoutinePeriodTabs({
         </div>
       </div>
 
-      {/* Barra de abas (sticky) — discreta, tipo navegação de editor */}
-      <div className="fixed top-[110px] left-0 right-0 z-30 bg-background border-b border-border h-[44px]">
-        <div className="px-6 h-full">
-          <div role="tablist" className="flex items-center h-full gap-6">
+      {/* Segmented control compacto */}
+      <div className="fixed top-[100px] left-0 right-0 z-30 bg-background border-b border-border h-9">
+        <div className="px-3 h-full flex items-center justify-between gap-3">
+          <div role="tablist" className="inline-flex h-7 rounded-md border border-border bg-[hsl(var(--surface-muted))] p-0.5">
             {periods.map(p => {
               const cfg = periodConfig[p];
               const c = counts[p];
@@ -324,28 +324,35 @@ export function RoutinePeriodTabs({
                   aria-selected={isActive}
                   onClick={() => setActiveTab(p)}
                   className={cn(
-                    'h-full flex items-center gap-2 border-b-2 transition-colors text-[13px] -mb-px',
+                    'h-full px-2.5 inline-flex items-center gap-1.5 rounded text-[12px] transition-colors',
                     isActive
-                      ? 'border-foreground text-foreground'
-                      : 'border-transparent text-muted-foreground hover:text-foreground',
+                      ? 'bg-foreground text-background shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  <span aria-hidden className="text-[13px] leading-none opacity-80">{cfg.emoji}</span>
+                  <span aria-hidden className="text-[11px] leading-none opacity-90">{cfg.emoji}</span>
                   <span>{cfg.label}</span>
-                  <span className="font-tech text-[10px] text-muted-foreground/70">{cfg.time}</span>
-                  <span className="font-tech text-[10px] text-muted-foreground/70">
-                    ({c.total})
+                  <span className={cn('font-tech text-[10px] tabular-nums', isActive ? 'opacity-70' : 'opacity-60')}>
+                    {c.total}
                   </span>
                   {c.error > 0 && (
-                    <span className="inline-flex items-center gap-1 font-tech text-[10px] text-[hsl(var(--status-error))]">
-                      <span className="status-dot status-dot--error" />
-                      {c.error}
+                    <span className={cn(
+                      'inline-flex items-center gap-1 font-tech text-[10px] font-medium tabular-nums',
+                      isActive ? 'text-[hsl(var(--status-error)/0.95)]' : 'text-[hsl(var(--status-error))]',
+                    )}>
+                      <span className="status-dot status-dot--error" />{c.error}
                     </span>
                   )}
                 </button>
               );
             })}
           </div>
+
+          {summary && (
+            <span className="font-tech text-[10px] text-muted-foreground/80 tabular-nums">
+              {summary}
+            </span>
+          )}
         </div>
       </div>
 
