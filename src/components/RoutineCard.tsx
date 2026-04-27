@@ -266,7 +266,7 @@ export function RoutineCard({
       {/* Expansão por clique na linha — detalhes adicionais */}
       {expanded && !showHistory && (
         <div className="border-t border-border bg-[hsl(var(--surface-muted))] px-3 py-2 grid grid-cols-4 gap-x-6 gap-y-1 text-[11px] font-tech">
-          <div><span className="text-muted-foreground/70">tabela: </span>{routine.tabela || '—'}</div>
+          <div><span className="text-muted-foreground/70">tabela: </span>{routine.tabela_controle || '—'}</div>
           <div><span className="text-muted-foreground/70">processada: </span>{processedDate}</div>
           <div><span className="text-muted-foreground/70">ref: </span>{routine.dateReference}</div>
           <div><span className="text-muted-foreground/70">grupo: </span>{routine.grupo || 'GERAL'}</div>
