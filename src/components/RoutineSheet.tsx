@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
 import { Routine, DateReference, RoutinePeriod, ControlPattern } from '@/types/routine';
 import { CONTROL_PATTERNS } from '@/types/control-pattern';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
